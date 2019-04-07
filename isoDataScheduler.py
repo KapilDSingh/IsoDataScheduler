@@ -40,10 +40,10 @@ def main():
     lmpOasis = oasisData()
     #putIsoData(lmpOasis)
 
-    schedule.every(1).minutes.do(putIsoData , lmpOasis)
+   # schedule.every(1).minutes.do(putIsoData , lmpOasis)
     while True:
-        schedule.run_pending()
-     #   time.sleep(10)
+        putIsoData(lmpOasis)
+        time.sleep(180)
 
 main()
 
