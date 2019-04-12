@@ -126,7 +126,10 @@ class oasisData(BaseClient):
            df['node_id'] = df.index
            
            df.reset_index(drop=True, inplace= True)
+           PSEG = df ['node_id']== 'PSEG'
+           df =df[PSEG]
            df.set_index('node_id', inplace=True)
+           
            #print(df)
            col_name = df.columns[2];
            # rename 'Hourly Integrated LMP for Hour Ending XX' and 'Type' columns
