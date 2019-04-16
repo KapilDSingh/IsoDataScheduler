@@ -114,6 +114,8 @@ class oasisData(BaseClient):
         # get timestamp
         ts = self.parse_date_from_oasis(response.data)
 
+        current_hour = ts.hour
+
         # parse to dataframes
         dfs = pd.read_html(response.data, header=0, index_col=0, parse_dates=False)
 
@@ -126,7 +128,10 @@ class oasisData(BaseClient):
            df['node_id'] = df.index
            
            df.reset_index(drop=True, inplace= True)
+           
+           df=df.loc[df['node_id'] =='PSEG']
            df.set_index('node_id', inplace=True)
+           
            #print(df)
            col_name = df.columns[2];
            # rename 'Hourly Integrated LMP for Hour Ending XX' and 'Type' columns
