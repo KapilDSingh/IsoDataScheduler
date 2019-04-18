@@ -21,7 +21,7 @@ def main():
             
             lmpData["Hourly Integrated LMP"].PSEG = PrevHourlyAvgLMP
             
-            prevHourlyAvgLMP = currentHourlyLMPAvg
+            PrevHourlyAvgLMP = currentHourlyLMPAvg
             
             
         loadData = lmpOasis.fetch_oasis_data(dataType = 'LOAD')
@@ -42,7 +42,7 @@ def main():
         print (tradeDf)
         lmpOasis.saveDf(DataTbl='genTbl', Data= genDf)
         lmpOasis.saveDf(DataTbl='tradeTbl', Data= tradeDf)
-        return prevHourlyAvgLMP, prevHour;
+        return PrevHourlyAvgLMP, prevHour;
 
 
 
@@ -55,7 +55,7 @@ def main():
 
    # schedule.every(1).minutes.do(putIsoData , lmpOasis)
     while True:
-        prevHourlyAvgLMP, prevHour = putIsoData(lmpOasis, prevHour,PrevHourlyAvgLMP)
+        PrevHourlyAvgLMP, prevHour = putIsoData(lmpOasis, prevHour,PrevHourlyAvgLMP)
         time.sleep(180)
 
 main()
