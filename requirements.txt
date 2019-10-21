@@ -23,7 +23,7 @@ schedule==0.5.0
 setuptools==39.0.1
 six==1.11.0
 SQLAlchemy==1.2.10
-urllib3==1.22
+urllib3==1.24.2
 vine==1.1.4
 webencodings==0.5.1
 xlrd==1.1.0
