@@ -114,6 +114,8 @@ class oasisData(BaseClient):
         # get timestamp
         ts = self.parse_date_from_oasis(response.data)
 
+        current_hour = ts.hour
+
         # parse to dataframes
         dfs = pd.read_html(response.data, header=0, index_col=0, parse_dates=False)
 
@@ -126,7 +128,10 @@ class oasisData(BaseClient):
            df['node_id'] = df.index
            
            df.reset_index(drop=True, inplace= True)
+           
+           df=df.loc[df['node_id'] =='PSEG']
            df.set_index('node_id', inplace=True)
+           
            #print(df)
            col_name = df.columns[2];
            # rename 'Hourly Integrated LMP for Hour Ending XX' and 'Type' columns
@@ -153,7 +158,7 @@ class oasisData(BaseClient):
 
         try:
         
-           engine = create_engine('mssql+pyodbc://ODBCCON')
+           engine = engine = create_engine('mssql+pymssql://KapilSingh:Acfjo12#@100.25.120.167:1433/ISODB')#create_engine('mssql+pyodbc://ODBCCON')
            
            Data.to_sql(DataTbl, engine, if_exists = 'append',index=False)
            
@@ -169,7 +174,7 @@ class oasisData(BaseClient):
     def getLmp_period(self, start = "2018-07-26 13:10:00.000000", end =  "2018-07-26 13:20:00.000000", nodeId='PSEG'):
         
         df =None
-        engine = create_engine('mssql+pyodbc://ODBCCON')
+        engine =create_engine('mssql+pymssql://KapilSingh:Acfjo12#@100.25.120.167\EC2AMAZ-I2S81GT:1433/ISODB')
         
         try:
             sql_query ='select timestamp, node_id, [5 Minute Weighted Avg. LMP] from dbo.lmpTbl where node_id = %(nodeId)s and ( timestamp between %(start)s  and %(end)s )  order by timestamp asc'
@@ -191,7 +196,7 @@ class oasisData(BaseClient):
     def getLmp_latest(self,  nodeId='PSEG', numIntervals=12):
 
         df =None
-        engine = create_engine('mssql+pyodbc://ODBCCON')
+        engine = create_engine('mssql+pymssql://KapilSingh:Acfjo12#@100.25.120.167:1433/ISODB')
         
         try:
             sql_query ="select top 5 timestamp, node_id, [5 Minute Weighted Avg. LMP] from dbo.lmpTbl where node_id ='PSEG'   order by timestamp desc"

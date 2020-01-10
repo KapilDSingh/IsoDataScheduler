@@ -10,8 +10,20 @@ import time
 
 
 def main():
-    def putIsoData(lmpOasis):
+    def putIsoData(lmpOasis, prevHour, PrevHourlyAvgLMP):
         lmpData = lmpOasis.fetch_oasis_data(dataType = 'LMP')
+
+        currentHour = lmpData.timestamp.dt.hour.PSEG
+        currentHourlyLMPAvg=lmpData["Hourly Integrated LMP"].PSEG
+        
+        if (currentHour !=  prevHour) :
+            prevHour = currentHour
+            
+            lmpData["Hourly Integrated LMP"].PSEG = PrevHourlyAvgLMP
+            
+            PrevHourlyAvgLMP = currentHourlyLMPAvg
+            
+            
         loadData = lmpOasis.fetch_oasis_data(dataType = 'LOAD')
         #genmixData = get_generation()
         lmpDf = lmpData.reset_index()
@@ -30,20 +42,21 @@ def main():
         print (tradeDf)
         lmpOasis.saveDf(DataTbl='genTbl', Data= genDf)
         lmpOasis.saveDf(DataTbl='tradeTbl', Data= tradeDf)
-
+        return PrevHourlyAvgLMP, prevHour;
 
 
 
 
  
-
+    prevHour = -1;
+    PrevHourlyAvgLMP =0;
     lmpOasis = oasisData()
     #putIsoData(lmpOasis)
 
-    schedule.every(2).minutes.do(putIsoData , lmpOasis)
+   # schedule.every(1).minutes.do(putIsoData , lmpOasis)
     while True:
-        schedule.run_pending()
-        time.sleep(10)
+        PrevHourlyAvgLMP, prevHour = putIsoData(lmpOasis, prevHour,PrevHourlyAvgLMP)
+        time.sleep(180)
 
 main()
 
