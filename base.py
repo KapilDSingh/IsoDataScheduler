@@ -19,7 +19,7 @@ import logging
 
 
 try:
-    from urllib2 import urlopen
+    from urllib3 import urlopen
 except ImportError:
     from urllib.request import urlopen  # Changed from urllib2 for python3.x
 
