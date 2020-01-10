@@ -157,11 +157,15 @@ class oasisData(BaseClient):
     def saveDf(self, DataTbl='lmpTbl', Data='df'):
 
         try:
-        
-           engine = engine = create_engine('mssql+pymssql://KapilSingh:Acfjo12#@100.25.120.167:1433/ISODB')#create_engine('mssql+pyodbc://ODBCCON')
-           
-           Data.to_sql(DataTbl, engine, if_exists = 'append',index=False)
-           
+            #server = 'tcp:kapilsingh.synology.me\sqlexpress,1433' 
+            #database = 'ISODB' 
+            #username = 'Kapil' 
+            #password = 'Acfjo12#' 
+            #cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
+            #cursor = cnxn.cursor()
+
+            engine  = create_engine('mssql+pyodbc://Kapil:Acfjo12#@ISODSN')
+            Data.to_sql(DataTbl, engine, if_exists = 'append',index=False)
         except sqlalchemy.exc.IntegrityError as e:
           return
         except BaseException as e:
@@ -174,7 +178,9 @@ class oasisData(BaseClient):
     def getLmp_period(self, start = "2018-07-26 13:10:00.000000", end =  "2018-07-26 13:20:00.000000", nodeId='PSEG'):
         
         df =None
-        engine =create_engine('mssql+pymssql://KapilSingh:Acfjo12#@100.25.120.167\EC2AMAZ-I2S81GT:1433/ISODB')
+        engine  = create_engine('mssql+pyodbc://Kapil:Acfjo12#@ISODSN')
+
+        #engine =create_engine('mssql+pymssql://KapilSingh:Acfjo12#@100.25.120.167\EC2AMAZ-I2S81GT:1433/ISODB')
         
         try:
             sql_query ='select timestamp, node_id, [5 Minute Weighted Avg. LMP] from dbo.lmpTbl where node_id = %(nodeId)s and ( timestamp between %(start)s  and %(end)s )  order by timestamp asc'
@@ -196,7 +202,8 @@ class oasisData(BaseClient):
     def getLmp_latest(self,  nodeId='PSEG', numIntervals=12):
 
         df =None
-        engine = create_engine('mssql+pymssql://KapilSingh:Acfjo12#@100.25.120.167:1433/ISODB')
+        engine  = create_engine('mssql+pyodbc://Kapil:Acfjo12#@ISODSN')
+
         
         try:
             sql_query ="select top 5 timestamp, node_id, [5 Minute Weighted Avg. LMP] from dbo.lmpTbl where node_id ='PSEG'   order by timestamp desc"

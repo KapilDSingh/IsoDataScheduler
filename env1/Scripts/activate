@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\Kapil\OneDrive\Documents\Visual Studio 2017\Projects\isoDataScheduler\env1"
+VIRTUAL_ENV="C:\Users\Kapil\OneDrive\IsoDataSchedulerGitHub\IsoDataScheduler\env1"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
