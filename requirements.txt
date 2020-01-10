@@ -18,7 +18,7 @@ pyodbc==4.0.24
 pyrpm==0.4
 python-dateutil==2.6.1
 pytz==2018.3
-requests==2.19.1
+requests==2.20.0
 schedule==0.5.0
 setuptools==39.0.1
 six==1.11.0
