@@ -7,55 +7,44 @@ import pandas as pd
 from pandas.io import sql
 import schedule
 import time
+from DataMiner import DataMiner
+from IsodataHelpers import IsodataHelpers
 
 
 def main():
-    def putIsoData(lmpOasis, prevHour, PrevHourlyAvgLMP):
-        lmpData = lmpOasis.fetch_oasis_data(dataType = 'LMP')
+    def putIsoData(dataMiner, isoHelper):
 
-        currentHour = lmpData.timestamp.dt.hour.PSEG
-        currentHourlyLMPAvg=lmpData["Hourly Integrated LMP"].PSEG
+        dataMiner.fetch_LMP(1, isoHelper)
+        dataMiner.fetch_InstantaneousLoad(4, isoHelper)
+        dataMiner.fetch_GenFuel(11, isoHelper)
+
+        lmpOasis = oasisData()
         
-        if (currentHour !=  prevHour) :
-            prevHour = currentHour
-            
-            lmpData["Hourly Integrated LMP"].PSEG = PrevHourlyAvgLMP
-            
-            PrevHourlyAvgLMP = currentHourlyLMPAvg
-            
-            
-        loadData = lmpOasis.fetch_oasis_data(dataType = 'LOAD')
-        #genmixData = get_generation()
-        lmpDf = lmpData.reset_index()
-        loadDf = loadData.reset_index()
-        lmpOasis.saveDf(DataTbl='lmpTbl', Data= lmpDf)
-        lmpOasis.saveDf(DataTbl='loadTbl', Data= loadDf)
-        df = lmpOasis.getLmp_latest( nodeId='PSEG',numIntervals=6)
-        #df2 = lmpOasis.getLmp_period()
+      
+        df = isoHelper.getLmp_latest( nodeId='PSEG',numIntervals=6)
+      
         print(df)
-        #print(df2)
-        genDf = lmpOasis.get_generation()
-        tradeDf = lmpOasis.get_trade();
-
-
-        print(genDf)
-        print (tradeDf)
-        lmpOasis.saveDf(DataTbl='genTbl', Data= genDf)
-        lmpOasis.saveDf(DataTbl='tradeTbl', Data= tradeDf)
-        return PrevHourlyAvgLMP, prevHour;
+   
+        #genDf = lmpOasis.get_generation()
+        
+        return
 
 
 
 
  
-    prevHour = -1;
-    PrevHourlyAvgLMP =0;
-    lmpOasis = oasisData()
-    #putIsoData(lmpOasis)
+   
+    dataMiner = DataMiner()
+    isoHelper = IsodataHelpers()
 
-   # schedule.every(1).minutes.do(putIsoData , lmpOasis)
+    isoHelper.emptyAllTbls()
+
+    dataMiner.fetch_LMP(1152, isoHelper)
+    dataMiner.fetch_InstantaneousLoad(5000, isoHelper)
+    dataMiner.fetch_GenFuel(20, isoHelper)
+
     while True:
-        PrevHourlyAvgLMP, prevHour = putIsoData(lmpOasis, prevHour,PrevHourlyAvgLMP)
+        putIsoData(dataMiner,isoHelper)
         time.sleep(180)
 
 main()

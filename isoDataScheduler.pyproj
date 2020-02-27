@@ -23,7 +23,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="base.py" />
+    <Compile Include="DataMiner.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IsodataHelpers.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="isoDataScheduler.py" />
+    <Compile Include="meterData.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="oasisData.py" />
   </ItemGroup>
   <ItemGroup>

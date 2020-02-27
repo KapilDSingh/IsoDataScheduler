@@ -78,7 +78,7 @@ class oasisData(BaseClient):
 
     def fetch_oasis_data(self, dataType='LMP'):
 
-        http = urllib3.PoolManager()
+        http = urllib3.PoolManager(2)
         
         df = None
         
@@ -157,13 +157,7 @@ class oasisData(BaseClient):
     def saveDf(self, DataTbl='lmpTbl', Data='df'):
 
         try:
-            #server = 'tcp:kapilsingh.synology.me\sqlexpress,1433' 
-            #database = 'ISODB' 
-            #username = 'Kapil' 
-            #password = 'Acfjo12#' 
-            #cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
-            #cursor = cnxn.cursor()
-
+            
             engine  = create_engine('mssql+pyodbc://Kapil:Acfjo12#@ISODSN')
             Data.to_sql(DataTbl, engine, if_exists = 'append',index=False)
         except sqlalchemy.exc.IntegrityError as e:
