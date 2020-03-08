@@ -33,15 +33,14 @@ class DataMiner(object):
     
     def fetch_LMP(self, numRows, isoHelper):
         try:
-            
-
-            
            
-            r = self.http.request('GET', 'https://api.pjm.com/api/v1/unverified_five_min_lmps?rowCount='+str(numRows)+'&sort=datetime_beginning_ept&order=desc&startrow=1&name=pseg&fields=datetime_beginning_ept,name,type,five_min_rtlmp,hourly_lmp&format=csv', headers=self.headers)
-            datalmp=r.data
-            strdata = datalmp.decode("utf-8") 
-            pyperclip.copy(strdata)
-            lmpDf=pd.read_clipboard(sep=',')
+            r = self.http.request('GET', 'https://api.pjm.com/api/v1/unverified_five_min_lmps?rowCount='+str(numRows)+'&sort=datetime_beginning_ept&order=desc&startrow=1&name=pseg&fields=datetime_beginning_ept,name,type,five_min_rtlmp,hourly_lmp&format=JSON', headers=self.headers)
+
+            jsonData = json.loads(r.data)
+
+            jsonExtractData = jsonData['items']
+            lmpDf = pd.DataFrame(jsonExtractData)
+
             lmpDf.reset_index(drop=True, inplace= True)
             
            

@@ -33,7 +33,7 @@ class IsodataHelpers(object):
     def saveDf(self, DataTbl='lmpTbl', Data='df'):
 
         try:
-             
+            Data.reset_index(drop=True, inplace= True)
             Data.to_sql(DataTbl, self.engine, if_exists = 'append',index=False)
 
         except sqlalchemy.exc.IntegrityError as e:
@@ -63,6 +63,7 @@ class IsodataHelpers(object):
         result = connection.execute("delete from lmpTbl")  
         result = connection.execute("delete from loadTbl") 
         result = connection.execute("delete from genFuelTbl") 
+        result = connection.execute("delete from meterTbl") 
         connection.close()
         return
 

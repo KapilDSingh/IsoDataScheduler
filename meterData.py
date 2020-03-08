@@ -1,85 +1,68 @@
-class meterData(object):
-    """description of class"""
-    TZ_NAME = 'America/New_York'
-    Fl2Meter_url ='https://summary.ekmmetering.com/summary?key=NjUyMzc0MjQ6Z3NaVmhEd20&meters=550001081&format=json&report=15&limit=10&offset=0&timelimit=1&timezone='+TZ_NAME+'&fields=kWh_Tot_Max~kWh_Tot_Min~RMS_Volts_Ln_1_Average~RMS_Volts_Ln_2_Average~RMS_Volts_Ln_3_Average&normalize=1'
+import urllib3
+import urllib
+from _datetime import datetime
+from sqlalchemy.dialects.mssql import pyodbc
+import json
+from bs4 import BeautifulSoup
+import pandas as pd
+from dateutil.parser import parse
+import pytz
+from datetime import datetime, timedelta
+import re
+from sqlalchemy import create_engine
+import sqlalchemy
+import sys
+import pyodbc
+import requests
+from base import BaseClient
+from pytz import timezone
+import base64
+import requests
+from urllib.parse import urlencode, quote_plus,urlparse, parse_qsl
+import pyperclip
+from IsodataHelpers import IsodataHelpers
 
+
+
+class MeterData(object):
+    http = urllib3.PoolManager()
 
 
     
-def fetch_oasis_data(self, dataType='LMP'):
+    def fetchMeterData(self, meters,  numReads, isoHelper):
 
-        http = urllib3.PoolManager(2)
-        
-        df = None
-        
         try:
-
-            response = http.request('GET', self.oasis_url)
-
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-
+            numReads = str(numReads)     
+            r = self.http.request('GET', 'https://io.ekmpush.com/readMeter?key=NjUyMzc0MjQ6Z3NaVmhEd20&meters=' +meters + '&ver=v4&fmt=json&cnt='+numReads+'&tz=America~New_York&fields=kWh_Tot~Rev_kWh_Tot~RMS_Volts_Ln_1~RMS_Volts_Ln_2~RMS_Volts_Ln_3~RMS_Watts_Ln_1~RMS_Watts_Ln_2~RMS_Watts_Ln_3~Power_Factor_Ln_1~Power_Factor_Ln_2~Power_Factor_Ln_3')
+            jsonMeter = json.loads(r.data)
+            jsonElectricData = jsonMeter['readMeter']['ReadSet'][0]['ReadData']
+            meterDf = pd.DataFrame(jsonElectricData)
             
-            msg = '%s: connection error for %s, %s:\n%s' % (self.NAME, url, kwargs, e)
-            print(msg)
-            return None
- 
-            if response.status == 429:
-                if retries_remaining > 0:
-                    # retry on throttle
-                    print('%s: retrying in %d seconds (%d retries remaining), throttled for %s, %s' % (self.NAME, retry_sec, retries_remaining, url, kwargs))
-                    sleep(retry_sec)
-                    retries_remaining -= 1
-                    response = http.request('GET', self.oasis_url)            
-                else:
-                    print('%s: exhausted retries for oasis, %s' % ( url, kwargs))
-                    return None
+            meterDf.insert (1, 'timestamp',  pd.to_datetime(meterDf['Date'] + ' '+meterDf['Time']),allow_duplicates = True) 
 
-            else:
-                # non-throttle error
-               printr('%s: request failure with code oasis for %s, %s' % (response.status_code, url, kwargs))
+            meterDf.insert(1, 'MeterID', meters, allow_duplicates = False)
+            
+            timezone = pytz.timezone("America/New_York")
+      
 
-        if not response:
-         return pd.DataFrame()
+            meterDf['timestamp'] = [timezone.localize(row) for row in  meterDf['timestamp']]
 
-        # get timestamp
-        ts = self.parse_date_from_oasis(response.data)
+            meterDf.drop(columns=['Good','Date', 'Time','Time_Stamp_UTC_ms'], inplace=True)
 
-        current_hour = ts.hour
+            meterDf = meterDf.astype({'kWh_Tot': float,'Rev_kWh_Tot': float,  'RMS_Volts_Ln_1': float,  'RMS_Volts_Ln_2': float,  'RMS_Volts_Ln_3': float, 'RMS_Watts_Ln_1' : float, 'RMS_Watts_Ln_2' : float, 'RMS_Watts_Ln_3' : float, 
+           'Power_Factor_Ln_1': float, 'Power_Factor_Ln_2': float, 'Power_Factor_Ln_3': float})
+            print(meterDf)
+            isoHelper.saveDf(DataTbl='meterTbl', Data= meterDf);
 
-        # parse to dataframes
-        dfs = pd.read_html(response.data, header=0, index_col=0, parse_dates=False)
+            i=1
 
-        if dataType == 'LMP':
-           df = dfs[1]
-            # parse lmp
-          
-                      
-           df['timestamp'] = ts
-           df['node_id'] = df.index
-           
-           df.reset_index(drop=True, inplace= True)
-           
-           df=df.loc[df['node_id'] =='PSEG']
-           df.set_index('node_id', inplace=True)
-           
-           #print(df)
-           col_name = df.columns[2];
-           # rename 'Hourly Integrated LMP for Hour Ending XX' and 'Type' columns
-           rename_d = {
-               col_name: 'Hourly Integrated LMP'
-               
-               }
-           df.rename(columns=rename_d, inplace=True)
-           return df
+        except Exception as e:
+          print(e)
+          print("Unexpected error:", sys.exc_info()[0])
+        finally:
+            return
 
-        elif dataType == 'LOAD':
-            # parse real-time load
-            df = dfs[4]
-            df['timestamp'] = ts
-            df['load'] = df.loc['PJM RTO'][0]
-            return df
 
-        else:
-            raise ValueError('Cannot parse OASIS LMP data for %s' % self.options['data'])
-        return None
+
+
 
