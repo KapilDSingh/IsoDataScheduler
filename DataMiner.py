@@ -61,16 +61,14 @@ class DataMiner(object):
     def fetch_InstantaneousLoad(self, numRows, isoHelper):
 
         try:
-
+            r = self.http.request('GET', 'https://api.pjm.com/api/v1/inst_load?rowCount='+str(numRows)+'&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,area,instantaneous_load&format=JSON', headers=self.headers)
             
+            jsonData = json.loads(r.data)
 
-            r = self.http.request('GET', 'https://api.pjm.com/api/v1/inst_load?rowCount='+str(numRows)+'&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,area,instantaneous_load&format=csv', headers=self.headers)
-            dataLoad=r.data
-            strdata = dataLoad.decode("utf-8") 
-            pyperclip.copy(strdata)
-            loadDf=pd.read_clipboard(sep=',')
+            jsonExtractData = jsonData['items']
+            loadDf = pd.DataFrame(jsonExtractData)
+
             loadDf.reset_index(drop=True, inplace= True)
-            
            
             loadDf.rename(columns={"datetime_beginning_ept": "timestamp", "area": "Area", "instantaneous_load": "Instantaneous Load"},inplace =True)
             
@@ -91,12 +89,14 @@ class DataMiner(object):
         try:
 
    
-            r = self.http.request('GET', 'https://api.pjm.com/api/v1/gen_by_fuel?rowCount='+str(numRows)+'&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,fuel_type,mw,fuel_percentage_of_total,is_renewable&format=csv', headers=self.headers)
-            dataLoad=r.data
-            strdata = dataLoad.decode("utf-8") 
-            pyperclip.copy(strdata)
-            genFuelDf=pd.read_clipboard(sep=',')
+            r = self.http.request('GET', 'https://api.pjm.com/api/v1/gen_by_fuel?rowCount='+str(numRows)+'&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,fuel_type,mw,fuel_percentage_of_total,is_renewable&format=JSON', headers=self.headers)
+            jsonData = json.loads(r.data)
+
+            jsonExtractData = jsonData['items']
+            genFuelDf = pd.DataFrame(jsonExtractData)
+
             genFuelDf.reset_index(drop=True, inplace= True)
+            
             
            
             genFuelDf.rename(columns={"datetime_beginning_ept": "timestamp", "fuel_type": "Fuel Type", "mw": "MW", "fuel_percentage_of_total":"Percentage of Total","is_renewable": "Renewable"},inplace =True)

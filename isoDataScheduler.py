@@ -18,8 +18,6 @@ def main():
         dataMiner.fetch_InstantaneousLoad(4, isoHelper)
         dataMiner.fetch_GenFuel(11, isoHelper)
         meterData.fetchMeterData('550001081', 1, isoHelper)
-        
-        
       
         df = isoHelper.getLmp_latest( nodeId='PSEG',numIntervals=6)
       
@@ -28,11 +26,6 @@ def main():
 
         
         return
-
-
-
-
- 
    
     dataMiner = DataMiner()
     isoHelper = IsodataHelpers()
