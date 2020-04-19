@@ -33,8 +33,8 @@ def main():
 
     isoHelper.emptyAllTbls()
 
-    dataMiner.fetch_LMP(1152, isoHelper)
-    dataMiner.fetch_InstantaneousLoad(1152, isoHelper)
+    dataMiner.fetch_LMP(2880, isoHelper)
+    dataMiner.fetch_InstantaneousLoad(11520, isoHelper)
     dataMiner.fetch_GenFuel(528, isoHelper)
     meterData.fetchMeterData('550001081', 1000, isoHelper)
 

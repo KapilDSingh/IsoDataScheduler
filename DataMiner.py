@@ -64,9 +64,18 @@ class DataMiner(object):
             r = self.http.request('GET', 'https://api.pjm.com/api/v1/inst_load?rowCount='+str(numRows)+'&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,area,instantaneous_load&format=JSON', headers=self.headers)
             
             jsonData = json.loads(r.data)
+            # Transform json input to python objects
+
+
+            # Filter python objects with list comprehensions
+            
+
+            # Transform python object back into json
+            #output_json = json.dumps(output_dict)
 
             jsonExtractData = jsonData['items']
-            loadDf = pd.DataFrame(jsonExtractData)
+            output_dict = [x for x in jsonExtractData if x['area'] == 'PJM RTO']
+            loadDf = pd.DataFrame(output_dict)
 
             loadDf.reset_index(drop=True, inplace= True)
            

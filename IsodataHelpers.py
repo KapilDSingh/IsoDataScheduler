@@ -60,10 +60,10 @@ class IsodataHelpers(object):
 
         connection = self.engine.connect()
 
-        #result = connection.execute("delete from lmpTbl")  
-        #result = connection.execute("delete from loadTbl") 
-        #result = connection.execute("delete from genFuelTbl") 
-        #result = connection.execute("delete from meterTbl") 
+        result = connection.execute("delete from lmpTbl")  
+        result = connection.execute("delete from loadTbl") 
+        result = connection.execute("delete from genFuelTbl") 
+        result = connection.execute("delete from meterTbl") 
         connection.close()
         return
 
@@ -74,7 +74,7 @@ class IsodataHelpers(object):
         #self.engine =create_self.engine('mssql+pymssql://KapilSingh:Acfjo12#@100.25.120.167\EC2AMAZ-I2S81GT:1433/ISODB')
         
         try:
-            sql_query ='select timestamp, node_id, [5 Minute Weighted Avg. LMP] from dbo.lmpTbl where node_id = %(nodeId)s and ( timestamp between %(start)s  and %(end)s )  order by timestamp asc'
+            sql_query ='select timestamp, node_id, [5 Minute Real Time LMP] from dbo.lmpTbl where node_id = %(nodeId)s and ( timestamp between %(start)s  and %(end)s )  order by timestamp asc'
             df = pd.read_sql_query(sql_query, self.engine, params ={
                                                            'node_id': nodeId,
                                                            'start' : start,
