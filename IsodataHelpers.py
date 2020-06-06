@@ -22,7 +22,11 @@ from urllib.parse import urlencode, quote_plus,urlparse, parse_qsl
 import pyperclip
 
 
-
+#SELECT TOP (1000) [timestamp]
+#      ,[EvaluatedAt]
+#      ,[Area]
+#      ,[LoadForecast]
+#  FROM [ISODB].[dbo].[forecastTbl] where [EvaluatedAt] = (select top 1 EvaluatedAt from forecastTbl where timestamp = timestamp  order by evaluatedAT desc) and Area = 'PSE&G/midatl'
 
 
 
@@ -63,6 +67,7 @@ class IsodataHelpers(object):
         result = connection.execute("delete from lmpTbl")  
         result = connection.execute("delete from loadTbl") 
         result = connection.execute("delete from genFuelTbl") 
+        result = connection.execute("delete from psMeteredLoad") 
         result = connection.execute("delete from meterTbl") 
         connection.close()
         return
@@ -98,6 +103,29 @@ class IsodataHelpers(object):
         
         try:
             sql_query ="select top 5 timestamp, node_id, [5 Minute Weighted Avg. LMP] from dbo.lmpTbl where node_id ='PSEG'   order by timestamp desc"
+
+            df = pd.read_sql_query(sql_query, self.engine) 
+ 
+        except BaseException as e:
+          print (e)
+  
+        finally:
+            self.engine.connect().close()
+
+        return df
+
+    def getPSEGMeterData(self,  MeterId = '9214411', startMonth = 1, endMonth =12, include=True):
+
+        df =None
+ 
+        condition= "  (month(timestamp) >='" + str(startMonth) +"' and month(timestamp) <='" + str(endMonth)+ "' )";
+        if include == True:
+           condition
+        else:
+           condition= "  not " + condition;
+        
+        try:
+            sql_query ="select KW from dbo.PSEGMeter where MeterId = '" + MeterId + "' and " + condition + "    order by timestamp asc"
 
             df = pd.read_sql_query(sql_query, self.engine) 
  

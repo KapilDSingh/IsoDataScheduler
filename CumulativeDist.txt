@@ -1,0 +1,78 @@
+import sys
+from distutils import sys
+from sys import path
+import pandas as pd
+from pandas.io import sql
+import schedule
+import time
+from DataMiner import DataMiner
+from IsodataHelpers import IsodataHelpers
+
+from meterData import MeterData
+import matplotlib
+import urllib3
+import urllib
+from _datetime import datetime
+from sqlalchemy.dialects.mssql import pyodbc
+import json
+from bs4 import BeautifulSoup
+import pandas as pd
+from dateutil.parser import parse
+import pytz
+from datetime import datetime, timedelta
+import re
+from sqlalchemy import create_engine
+import sqlalchemy
+import sys
+import pyodbc
+import requests
+from base import BaseClient
+from pytz import timezone
+import base64
+import requests
+from urllib.parse import urlencode, quote_plus,urlparse, parse_qsl
+import pyperclip
+ 
+import matplotlib.pyplot as plt
+import numpy as np
+       
+dataMiner = DataMiner()
+isoHelper = IsodataHelpers()
+meterData = MeterData()
+meter='550001081'
+startMonth=7
+endMonth=7
+include=True
+meterDf7 = isoHelper.getPSEGMeterData('9214411', startMonth,endMonth,include)
+KWArr7 = meterDf7['KW']
+KW7=np.sort(KWArr)
+        
+bins = np.arange(0,38,1)
+dist7 = np.histogram(KW7,bins=bins)
+x7=dist7[0]
+x7=np.insert(x7,0,0)
+
+y7=dist7[1]
+
+x7 = np.cumsum(x7)
+        
+fig,ax = plt.subplots()
+ax.plot(y7,x7)
+        
+
+Type=str(startMonth) + "-" + str(endMonth) + str(include);
+ax.set(xlabel='KW', ylabel='Freq',
+        title=Type)
+ax.grid()
+
+dfNew=pd.DataFrame('x':x7, 'y':y7)
+
+plt.show()
+df=pd.DataFrame({'x000': range(1,11), 'x111' : range(3, 13),'y1111': np.random.randn(10), 'y2222': np.random.randn(10)+range(1,11), 'y3333': np.random.randn(10)+range(11,21) })
+ 
+# multiple line plot
+plt.plot( 'x000', 'y1111', data=df, marker='o', markerfacecolor='blue', markersize=12, color='skyblue', linewidth=4)
+plt.plot( 'x111', 'y2222', data=df, marker='o', color='olive', linewidth=2)
+plt.plot( 'x000', 'y3333', data=df, marker='', color='olive', linewidth=2, linestyle='dashed', label="toto")
+
+plt.show()

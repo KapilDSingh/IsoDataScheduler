@@ -20,11 +20,13 @@ import base64
 import requests
 from urllib.parse import urlencode, quote_plus,urlparse, parse_qsl
 import pyperclip
-from IsodataHelpers import IsodataHelpers
-
+import IsodataHelpers 
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 class MeterData(object):
+
     http = urllib3.PoolManager()
 
 
@@ -63,6 +65,61 @@ class MeterData(object):
             return
 
 
+    
+
+    def LoadCurveUtilityMeter(self, meter,  startMonth, endMonth, isoHelper, include):
 
 
+        meterDf = isoHelper.getPSEGMeterData(meter, startMonth,endMonth,include)
+        KWArr = meterDf['KW']
+        KW=np.sort(KWArr)
+        
+        bins = np.arange(0,38,1)
+        dist = np.histogram(KW,bins=bins, density=True)
+        x=dist[0]
+  
+        xSum=np.sum(x)
 
+        x=np.insert(x,0,0)
+        y=dist[1]
+
+        xCum = np.cumsum(x)
+        
+        flipxCum = 1-xCum
+        flipxCum =list(map(lambda x : x if (x > 0.0000001) else 0, flipxCum));
+                         
+        Type=str(startMonth) + "-" + str(endMonth) + str(include);
+
+        histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'KW':y})
+        isoHelper.saveDf(DataTbl='ConsumptionHist', Data= histDf);
+              
+        return flipxCum, y
+
+    def genHist(self, meter, isoHelper):
+        engine = create_engine('mssql+pyodbc://Kapil:Acfjo12#@ISODSN');
+        connection = engine.connect()
+
+        result = connection.execute("delete from ConsumptionHist")  
+        connection.close()
+        flipxCum, y = self.LoadCurveUtilityMeter(meter, 6, 9, isoHelper, True);
+        plt.scatter( flipxCum,y, marker='o',  color='skyblue', linewidth=1)
+      
+        flipxCum1, y1=self.LoadCurveUtilityMeter(meter, 6, 9, isoHelper, False);
+        #plt.scatter( flipxCum1,y1, marker='o',  color='red', linewidth=1)
+        flipxCum2, y2=self.LoadCurveUtilityMeter(meter, 1, 12, isoHelper, True);
+        #plt.scatter( flipxCum2,y2, marker='o',  color='green', linewidth=1)
+        flipxCum3, y3=self.LoadCurveUtilityMeter(meter, 1, 1, isoHelper, True);
+        #plt.scatter( flipxCum3,y3, marker='o',  color='yellow', linewidth=1)
+        #plt.show()
+        self.LoadCurveUtilityMeter(meter, 2, 2, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 3, 3, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 4, 4, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 5, 5, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 6, 6, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 7, 7, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 8, 8, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 9, 9, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 10, 10, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 11, 11, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 12, 12, isoHelper, True);
+        return

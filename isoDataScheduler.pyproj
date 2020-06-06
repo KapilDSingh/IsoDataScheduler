@@ -36,6 +36,7 @@
     <Compile Include="oasisData.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="CumulativeDist.txt" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
