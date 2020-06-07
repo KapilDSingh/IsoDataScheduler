@@ -11,7 +11,12 @@
     <OutputPath>.</OutputPath>
     <Name>isoDataScheduler</Name>
     <RootNamespace>isoDataScheduler</RootNamespace>
-    <InterpreterId>MSBuild|env1|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|isoenv|$(MSBuildProjectFullPath)</InterpreterId>
+    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
+    <PublishUrl>C:\Users\Kapil\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\isodatascheduler</PublishUrl>
+    <IsWindowsApplication>False</IsWindowsApplication>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <EnableNativeCodeDebugging>True</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +27,6 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="base.py" />
     <Compile Include="DataMiner.py">
       <SubType>Code</SubType>
     </Compile>
@@ -40,10 +44,10 @@
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="env1\">
-      <Id>env1</Id>
+    <Interpreter Include="isoenv\">
+      <Id>isoenv</Id>
       <Version>3.7</Version>
-      <Description>env1 (Python 3.7 (64-bit))</Description>
+      <Description>isoenv (Python 3.7 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>

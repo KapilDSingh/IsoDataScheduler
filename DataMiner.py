@@ -1,6 +1,6 @@
 
 import urllib3
-import urllib
+#import urllib
 from _datetime import datetime
 from sqlalchemy.dialects.mssql import pyodbc
 import json
@@ -15,7 +15,7 @@ import sqlalchemy
 import sys
 import pyodbc
 import requests
-from base import BaseClient
+
 from pytz import timezone
 import base64
 import requests

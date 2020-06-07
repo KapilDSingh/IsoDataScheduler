@@ -32,7 +32,7 @@ def main():
     isoHelper = IsodataHelpers()
     meterData = MeterData()
     
-    #meterData.genHist('9214411', isoHelper)
+    meterData.genHist('9214411', isoHelper)
    
 
     i=1
