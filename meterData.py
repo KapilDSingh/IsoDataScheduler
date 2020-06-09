@@ -14,7 +14,7 @@ import sqlalchemy
 import sys
 import pyodbc
 import requests
-from base import BaseClient
+
 from pytz import timezone
 import base64
 import requests
