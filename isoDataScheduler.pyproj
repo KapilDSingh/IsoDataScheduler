@@ -11,9 +11,9 @@
     <OutputPath>.</OutputPath>
     <Name>isoDataScheduler</Name>
     <RootNamespace>isoDataScheduler</RootNamespace>
-    <InterpreterId>MSBuild|isodataenv|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|isoenv|$(MSBuildProjectFullPath)</InterpreterId>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
-    <PublishUrl>C:\Users\Kapil\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\isodatascheduler</PublishUrl>
+    <PublishUrl>C:\isodatascheduler</PublishUrl>
     <IsWindowsApplication>False</IsWindowsApplication>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
