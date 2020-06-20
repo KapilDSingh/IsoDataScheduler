@@ -169,6 +169,57 @@ class DataMiner(object):
         finally:
                 return
 
+
+
+    def fetch_7dayLoadForecast(self, isPSEG, isoHelper):
+            try:
+                   if (isPSEG == True):
+                        Area = 'pse&g/midatl'
+                   else:
+                        Area = 'midatl'
+
+                   params = urllib.parse.urlencode({
+                    # Request parameters
+   
+                    'rowCount': '50000',
+                    'sort': 'forecast_datetime_beginning_ept',
+                    'order': 'asc',
+                    'startRow': '1',
+               
+        #load_frcstd_7_day?rowCount=100&sort=forecast_datetime_beginning_ept&order=Asc&startRow=1&fields=forecast_datetime_beginning_ept,forecast_area,
+        #forecast_load_mw&forecast_area=PSE%26G/MIDATL
+                    'fields': 'evaluated_at_ept,forecast_datetime_beginning_ept,forecast_area, forecast_load_mw',
+   
+                    'evaluated_at_ept': '5minutesago',
+                
+                    'forecast_area': Area,
+                    'format':'json'})
+                   r = self.http.request('GET', "https://api.pjm.com/api/v1/load_frcstd_7_day?rowCount=600&sort=forecast_datetime_beginning_ept&order=Asc&startRow=1&fields=forecast_datetime_beginning_ept,forecast_area, forecast_load_mw&forecast_area=PSE%26G/MIDATL", headers=self.headers)
+
+                   jsonData = json.loads(r.data)
+
+                   jsonExtractData = jsonData['items']
+                   forecastDf = pd.DataFrame(jsonExtractData)
+
+                   forecastDf.reset_index(drop = True, inplace = True)
+            
+           
+                   forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", "forecast_area":"Area","forecast_load_mw": "Load 7 Day Forecast"},inplace =True)
+            
+                   forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
+                   forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
+
+              
+                   isoHelper.saveDf(DataTbl = 'forecast7dayTbl', Data = forecastDf)
+                   i = 1
+
+            except Exception as e:
+                   print("[Errno {0}] {1}".format(e.errno, e.strerror))
+            finally:
+                    return
+
+
+
     def fetch_hourlyMeteredLoad(self, isPSEG, StartTime, isoHelper):
         try:
              if (isPSEG == True):
