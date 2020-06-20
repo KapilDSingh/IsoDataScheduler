@@ -66,8 +66,8 @@ class IsodataHelpers(object):
         result = connection.execute("delete from lmpTbl")  
         result = connection.execute("delete from loadTbl") 
         result = connection.execute("delete from genFuelTbl") 
-        result = connection.execute("delete from psMeteredLoad") 
-        result = connection.execute("delete from meterTbl") 
+        #result = connection.execute("delete from psMeteredLoad") 
+        #result = connection.execute("delete from meterTbl") 
         connection.close()
         return
 

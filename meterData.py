@@ -39,14 +39,12 @@ class MeterData(object):
             jsonMeter = json.loads(r.data)
             jsonElectricData = jsonMeter['readMeter']['ReadSet'][0]['ReadData']
             meterDf = pd.DataFrame(jsonElectricData)
-            
             meterDf.insert (1, 'timestamp',  pd.to_datetime(meterDf['Date'] + ' '+meterDf['Time']),allow_duplicates = False) 
-
             meterDf.insert(1, 'MeterID', meters, allow_duplicates = True)
-            
+      
             timezone = pytz.timezone("America/New_York")
       
-
+            meterDf['timestamp'] = [pd.Timestamp.round(row, 'min') for row in  meterDf['timestamp']]
             meterDf['timestamp'] = [timezone.localize(row) for row in  meterDf['timestamp']]
 
             meterDf.drop(columns=['Good','Date', 'Time','Time_Stamp_UTC_ms'], inplace=True)
