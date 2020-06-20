@@ -36,7 +36,7 @@ def main():
    
 
     i=1
-    #isoHelper.emptyAllTbls()
+    isoHelper.emptyAllTbls()
 
     dataMiner.fetch_LMP(2880, isoHelper)
     dataMiner.fetch_InstantaneousLoad(11520, isoHelper)
