@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\Kapil\source\Repos\IsoDataScheduler\env2"
+VIRTUAL_ENV="C:\Users\Kapil\Source\Repos\IsoDataScheduler\env2"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
