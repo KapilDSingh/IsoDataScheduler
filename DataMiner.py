@@ -22,6 +22,9 @@ import requests
 from urllib.parse import urlencode, quote_plus,urlparse, parse_qsl
 import pyperclip
 from IsodataHelpers import IsodataHelpers
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 class DataMiner(object):
     """description of class"""
@@ -52,42 +55,39 @@ class DataMiner(object):
             i = 1
         except Exception as e:
           print(e)
-          print("Unexpected error:", sys.exc_info()[0])
+          print("Fetch LMP Unexpected error:", sys.exc_info()[0])
         finally:
             return
 
 
 
-    def fetch_InstantaneousLoad(self, numRows, isoHelper):
+    def fetch_InstantaneousLoad(self, numRows,  Area, isoHelper):
 
         try:
-            r = self.http.request('GET', 'https://api.pjm.com/api/v1/inst_load?rowCount=' + str(numRows) + '&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,area,instantaneous_load&format=JSON', headers=self.headers)
+            r = self.http.request('GET', 'https://api.pjm.com/api/v1/inst_load?area=' + Area + '&rowCount=' + str(numRows) + '&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,area,instantaneous_load&format=JSON', headers=self.headers)
             
             jsonData = json.loads(r.data)
-            # Transform json input to python objects
 
-
-            # Filter python objects with list comprehensions
-            
-
-            # Transform python object back into json
-            #output_json = json.dumps(output_dict)
 
             jsonExtractData = jsonData['items']
-            output_dict = [x for x in jsonExtractData if x['area'] == 'PJM RTO']
-            loadDf = pd.DataFrame(output_dict)
+            loadDf = pd.DataFrame(jsonExtractData)
 
             loadDf.reset_index(drop=True, inplace= True)
+            
            
-            loadDf.rename(columns={"datetime_beginning_ept": "timestamp", "area": "Area", "instantaneous_load": "Instantaneous Load"},inplace =True)
+            loadDf.rename(columns={"datetime_beginning_ept": "timestamp", "area": "Area", "instantaneous_load": "Load"},inplace =True)
             
             loadDf['timestamp'] = pd.to_datetime(loadDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
             loadDf['timestamp'] = pd.to_datetime(loadDf['timestamp'])
-            isoHelper.saveDf(DataTbl='loadTbl', Data= loadDf)
+            if (Area =='ps'):
+                isoHelper.saveDf(DataTbl='psInstLoadTbl', Data= loadDf)
+            else:
+                isoHelper.saveDf(DataTbl='loadTbl', Data= loadDf)
+
             i = 1
         except Exception as e:
           print(e)
-          print("Unexpected error:", sys.exc_info()[0])
+          print("Fetch Instantaneous Load Unexpected error:", sys.exc_info()[0])
         finally:
             return
 
@@ -116,7 +116,7 @@ class DataMiner(object):
             i = 1
         except Exception as e:
           print(e)
-          print("Unexpected error:", sys.exc_info()[0])
+          print("Fetch GenFuel Unexpected error:", sys.exc_info()[0])
         finally:
             return
 
@@ -126,7 +126,7 @@ class DataMiner(object):
                if (isPSEG == True):
                     Area = 'pse&g/midatl'
                else:
-                    Area = 'midatl'
+                    Area = 'RTO_COMBINED'
 
                params = urllib.parse.urlencode({
                 # Request parameters
@@ -161,7 +161,26 @@ class DataMiner(object):
                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'].values).strftime('%Y-%m-%d %H:%M:%S')
                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'])
               
-               isoHelper.saveDf(DataTbl='forecastTbl', Data= forecastDf)
+               forecastDf = forecastDf.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
+               
+               forecastDf = forecastDf.sort_values('timestamp',ascending=False)
+
+               newestTimestamp =forecastDf['timestamp'].max()
+               newestEvaluateAt = forecastDf['EvaluatedAt'].max()
+
+               oldestTimestamp =forecastDf['timestamp'].min()
+               oldestEvaluateAt = forecastDf['EvaluatedAt'].min()
+ 
+               dfTimeStamp = isoHelper.get_latest_Forecast(isShortTerm=True)
+               print(forecastDf)
+
+               if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
+                   print (forecastDf)
+                   if (isPSEG == True):
+                       isoHelper.saveForecastDf(oldestTimestamp, DataTbl='forecastTbl', Data= forecastDf, isShortTerm=True)
+                   else:
+                       isoHelper.saveForecastDf(oldestTimestamp, DataTbl='rtoForecastTbl', Data= forecastDf, isShortTerm=True)
+                
                i = 1
 
         except Exception as e:
@@ -174,9 +193,9 @@ class DataMiner(object):
     def fetch_7dayLoadForecast(self, isPSEG, isoHelper):
             try:
                    if (isPSEG == True):
-                        Area = 'pse&g/midatl'
+                        Area = 'PSE%26G/MIDATL'
                    else:
-                        Area = 'midatl'
+                        Area = 'RTO_COMBINED'
 
                    params = urllib.parse.urlencode({
                     # Request parameters
@@ -190,11 +209,11 @@ class DataMiner(object):
         #forecast_load_mw&forecast_area=PSE%26G/MIDATL
                     'fields': 'evaluated_at_ept,forecast_datetime_beginning_ept,forecast_area, forecast_load_mw',
    
-                    'evaluated_at_ept': '5minutesago',
+                    'evaluated_at_ept': '15SecondsAgo',
                 
                     'forecast_area': Area,
                     'format':'json'})
-                   r = self.http.request('GET', "https://api.pjm.com/api/v1/load_frcstd_7_day?rowCount=600&sort=forecast_datetime_beginning_ept&order=Asc&startRow=1&fields=forecast_datetime_beginning_ept,forecast_area, forecast_load_mw&forecast_area=PSE%26G/MIDATL", headers=self.headers)
+                   r = self.http.request('GET', "https://api.pjm.com/api/v1/load_frcstd_7_day?rowCount=600&sort=forecast_datetime_beginning_ept&order=Asc&startRow=1&fields=forecast_datetime_beginning_ept,forecast_area, forecast_load_mw&forecast_area=" + Area, headers=self.headers)
 
                    jsonData = json.loads(r.data)
 
@@ -204,28 +223,41 @@ class DataMiner(object):
                    forecastDf.reset_index(drop = True, inplace = True)
             
            
-                   forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", "forecast_area":"Area","forecast_load_mw": "Load 7 Day Forecast"},inplace =True)
+                   forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", "forecast_area":"Area","forecast_load_mw": "Weekly Load Forecast"},inplace =True)
             
                    forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
                    forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
+                   EvaluatedAt = datetime.now()
+                   forecastDf['EvaluatedAt'] = EvaluatedAt
+                   newestTimestamp =forecastDf['timestamp'].max()
+                   
+                   oldestTimestamp =forecastDf['timestamp'].min()
+                   dfTimeStamp = isoHelper.get_latest_Forecast(isShortTerm=False)
+        
 
-              
-                   isoHelper.saveDf(DataTbl = 'forecast7dayTbl', Data = forecastDf)
+                   if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
+                       print (forecastDf)
+                   if (isPSEG == True):
+                       isoHelper.saveForecastDf(oldestTimestamp, DataTbl='forecast7dayTbl', Data= forecastDf, isShortTerm=False)
+                   else:
+                       isoHelper.saveForecastDf(oldestTimestamp, DataTbl='rtoForecast7dayTbl', Data= forecastDf, isShortTerm=False)
+
                    i = 1
 
             except Exception as e:
                    print("[Errno {0}] {1}".format(e.errno, e.strerror))
             finally:
                     return
+                   
 
 
 
-    def fetch_hourlyMeteredLoad(self, isPSEG, StartTime, isoHelper):
+    def fetch_hourlyMeteredLoad(self, isPSEG, StartTime, update, isoHelper):
         try:
              if (isPSEG == True):
                     load_area = 'ps'
              else:
-                    load_area = 'midatl'
+                    load_area = 'RTO'
 
              params = urllib.parse.urlencode({
              # Request parameters
@@ -238,8 +270,10 @@ class DataMiner(object):
                 'fields': 'datetime_beginning_ept,load_area, mw, is_verified',
                 'load_area': load_area,
                 'format':'json'})
-               
-             r = self.http.request('GET', "https://api.pjm.com/api/v1/hrl_load_metered?%s" % params, headers=self.headers)
+             if (update == False):  
+                r = self.http.request('GET', "https://api.pjm.com/api/v1/hrl_load_metered?%s" % params, headers=self.headers)
+             else:
+                r = self.http.request('GET', "https://api.pjm.com/api/v1/hrl_load_metered?rowCount=24&sort=datetime_beginning_ept&order=Desc&startRow=1&fields=datetime_beginning_ept,load_area, mw, is_verified&load_area=" + load_area, headers=self.headers)
 
              jsonData = json.loads(r.data)
 
@@ -254,9 +288,189 @@ class DataMiner(object):
              forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
              forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
 
-             
-             isoHelper.saveDf(DataTbl='psMeteredLoad', Data= forecastDf)
+             if (isPSEG):
+                isoHelper.saveDf(DataTbl='psMeteredLoad', Data= forecastDf)
+             else:
+                isoHelper.saveDf(DataTbl='pjmMeteredLoad', Data= forecastDf)
+
         except Exception as e:
                print("[Errno {0}] {1}".format(e.errno, e.strerror))
         finally:
                 return
+
+
+
+    
+
+    def PSEGLoadCurve(self, startMonth, endMonth, isoHelper, include):
+
+        PSEGLoadDf= isoHelper.getPSEGLoad(startMonth=1, endMonth=12, include=True)
+
+
+        KWArr = PSEGLoadDf['Load']
+        KW=np.sort(KWArr)
+        maxKW=KWArr.max().round(-1)+10
+        minKW=KWArr.min().round(-1)-10
+        bins = np.arange(minKW,maxKW,10)
+        dist = np.histogram(KW,bins=bins, density=True)
+        x=dist[0]
+  
+        xSum=np.sum(x)
+
+        x=np.insert(x,0,0)
+        y=dist[1]
+
+        xCum = np.cumsum(x)
+        
+        flipxCum = 1-xCum
+        flipxCum =list(map(lambda x : x if (x > 0.0000001) else 0, flipxCum));
+                         
+        Type=str(startMonth) + "-" + str(endMonth) + str(include);
+
+        histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'KW':y})
+        isoHelper.saveDf(DataTbl='PSEGLoadHist', Data= histDf);
+              
+        return flipxCum, y
+
+    def genHist(self, meter, isoHelper):
+        engine = create_engine('mssql+pyodbc://Kapil:Acfjo12#@ISODSN');
+        connection = engine.connect()
+
+        result = connection.execute("delete from ConsumptionHist")  
+        connection.close()
+        flipxCum, y = self.LoadCurveUtilityMeter(meter, 6, 9, isoHelper, True);
+        #plt.scatter( flipxCum,y, marker='o',  color='skyblue', linewidth=1)
+      
+        flipxCum1, y1=self.LoadCurveUtilityMeter(meter, 6, 9, isoHelper, False);
+        #plt.scatter( flipxCum1,y1, marker='o',  color='red', linewidth=1)
+        flipxCum2, y2=self.LoadCurveUtilityMeter(meter, 1, 12, isoHelper, True);
+        #plt.scatter( flipxCum2,y2, marker='o',  color='green', linewidth=1)
+        flipxCum3, y3=self.LoadCurveUtilityMeter(meter, 1, 1, isoHelper, True);
+        #plt.scatter( flipxCum3,y3, marker='o',  color='yellow', linewidth=1)
+        #plt.show()
+        self.LoadCurveUtilityMeter(meter, 2, 2, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 3, 3, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 4, 4, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 5, 5, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 6, 6, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 7, 7, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 8, 8, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 9, 9, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 10, 10, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 11, 11, isoHelper, True);
+        self.LoadCurveUtilityMeter(meter, 12, 12, isoHelper, True);
+        return
+
+    def genPSEGLoadHist(self,  isoHelper):
+        engine = create_engine('mssql+pyodbc://Kapil:Acfjo12#@ISODSN');
+        connection = engine.connect()
+
+        result = connection.execute("delete from PSEGLoadHist")  
+        connection.close()
+        flipxCum, y = self.PSEGLoadCurve(6, 9, isoHelper, True);
+        #plt.scatter( flipxCum,y, marker='o',  color='skyblue', linewidth=1)
+      
+        flipxCum1, y1=self.PSEGLoadCurve(6, 9, isoHelper, False);
+        #plt.scatter( flipxCum1,y1, marker='o',  color='red', linewidth=1)
+        #plt.show()
+        flipxCum2, y2=self.PSEGLoadCurve(1, 12, isoHelper, True);
+        #plt.scatter( flipxCum2,y2, marker='o',  color='green', linewidth=1)
+        #plt.show()
+        flipxCum3, y3=self.PSEGLoadCurve(1, 1, isoHelper, True);
+        #plt.scatter( flipxCum3,y3, marker='o',  color='yellow', linewidth=1)
+        #plt.show()
+        self.PSEGLoadCurve(2, 2, isoHelper, True);
+        self.PSEGLoadCurve(3, 3, isoHelper, True);
+        self.PSEGLoadCurve(4, 4, isoHelper, True);
+        self.PSEGLoadCurve(5, 5, isoHelper, True);
+        self.PSEGLoadCurve(6, 6, isoHelper, True);
+        self.PSEGLoadCurve(7, 7, isoHelper, True);
+        self.PSEGLoadCurve(8, 8, isoHelper, True);
+        self.PSEGLoadCurve(9, 9, isoHelper, True);
+        self.PSEGLoadCurve(10, 10, isoHelper, True);
+        self.PSEGLoadCurve(11, 11, isoHelper, True);
+        self.PSEGLoadCurve(12, 12, isoHelper, True);
+        return
+
+
+
+    def PSEGLoadCurve(self, startMonth, endMonth, isoHelper, include):
+
+        PSEGLoadDf= isoHelper.getPSEGLoad(startMonth=1, endMonth=12, include=True)
+
+
+        KWArr = PSEGLoadDf['Load']
+        KW=np.sort(KWArr)
+        maxKW=KWArr.max().round(-1)+10
+        minKW=KWArr.min().round(-1)-10
+        bins = np.arange(minKW,maxKW,10)
+        dist = np.histogram(KW,bins=bins, density=True)
+        x=dist[0]
+  
+        xSum=np.sum(x)
+
+        x=np.insert(x,0,0)
+        y=dist[1]
+
+        xCum = np.cumsum(x)
+        
+        flipxCum = 1-xCum
+        flipxCum =list(map(lambda x : x if (x > 0.0000001) else 0, flipxCum));
+                         
+        Type=str(startMonth) + "-" + str(endMonth) + str(include);
+
+        histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'KW':y})
+        isoHelper.saveDf(DataTbl='PSEGLoadHist', Data= histDf);
+              
+        return flipxCum, y
+
+  
+
+    def RTOLoadCurve(self, startMonth, endMonth, isoHelper, include):
+
+        RTOLoadDf= isoHelper.getRTOLoad(startMonth=1, endMonth=12, include=True)
+
+
+        KWArr = RTOLoadDf['Load']
+        KW=np.sort(KWArr)
+        maxKW=KWArr.max().round(-1)+10
+        minKW=KWArr.min().round(-1)-10
+        bins = np.arange(minKW,maxKW,10)
+        dist = np.histogram(KW,bins=bins, density=True)
+        x=dist[0]
+  
+        xSum=np.sum(x)
+
+        x=np.insert(x,0,0)
+        y=dist[1]
+
+        xCum = np.cumsum(x)
+        
+        flipxCum = 1-xCum
+        flipxCum =list(map(lambda x : x if (x > 0.0000001) else 0, flipxCum));
+                         
+        Type=str(startMonth) + "-" + str(endMonth) + str(include);
+
+        histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'KW':y})
+        isoHelper.saveDf(DataTbl='RTOLoadHist', Data= histDf);
+              
+        return flipxCum, y
+
+
+    def genRTOLoadHist(self,  isoHelper):
+        engine = create_engine('mssql+pyodbc://Kapil:Acfjo12#@ISODSN');
+        connection = engine.connect()
+
+        result = connection.execute("delete from RTOLoadHist")  
+        connection.close()
+        flipxCum, y = self.RTOLoadCurve(6, 9, isoHelper, True);
+        #plt.scatter( flipxCum,y, marker='o',  color='skyblue', linewidth=1)
+        #plt.show()
+        flipxCum1, y1=self.RTOLoadCurve(6, 9, isoHelper, False);
+        #plt.scatter( flipxCum1,y1, marker='o',  color='red', linewidth=1)
+        #plt.show()
+        flipxCum2, y2=self.RTOLoadCurve(1, 12, isoHelper, True);
+        #plt.scatter( flipxCum2,y2, marker='o',  color='green', linewidth=1)
+        #plt.show()
+        
+        return
