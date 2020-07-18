@@ -309,11 +309,11 @@ class DataMiner(object):
 
         KWArr = PSEGLoadDf['Load']
         KW=np.sort(KWArr)
-        maxKW=KWArr.max().round(-1)+10
-        minKW=KWArr.min().round(-1)-10
-        bins = np.arange(minKW,maxKW,10)
+        maxKW=10000
+        minKW=3000
+        bins = np.arange(minKW,maxKW,100)
         dist = np.histogram(KW,bins=bins, density=True)
-        x=dist[0]
+        x=dist[0]*100
   
         xSum=np.sum(x)
 
@@ -327,7 +327,7 @@ class DataMiner(object):
                          
         Type=str(startMonth) + "-" + str(endMonth) + str(include);
 
-        histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'KW':y})
+        histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'MW':y})
         isoHelper.saveDf(DataTbl='PSEGLoadHist', Data= histDf);
               
         return flipxCum, y
@@ -394,37 +394,6 @@ class DataMiner(object):
 
 
 
-    def PSEGLoadCurve(self, startMonth, endMonth, isoHelper, include):
-
-        PSEGLoadDf= isoHelper.getPSEGLoad(startMonth=1, endMonth=12, include=True)
-
-
-        KWArr = PSEGLoadDf['Load']
-        KW=np.sort(KWArr)
-        maxKW=KWArr.max().round(-1)+10
-        minKW=KWArr.min().round(-1)-10
-        bins = np.arange(minKW,maxKW,10)
-        dist = np.histogram(KW,bins=bins, density=True)
-        x=dist[0]
-  
-        xSum=np.sum(x)
-
-        x=np.insert(x,0,0)
-        y=dist[1]
-
-        xCum = np.cumsum(x)
-        
-        flipxCum = 1-xCum
-        flipxCum =list(map(lambda x : x if (x > 0.0000001) else 0, flipxCum));
-                         
-        Type=str(startMonth) + "-" + str(endMonth) + str(include);
-
-        histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'KW':y})
-        isoHelper.saveDf(DataTbl='PSEGLoadHist', Data= histDf);
-              
-        return flipxCum, y
-
-  
 
     def RTOLoadCurve(self, startMonth, endMonth, isoHelper, include):
 
@@ -433,11 +402,11 @@ class DataMiner(object):
 
         KWArr = RTOLoadDf['Load']
         KW=np.sort(KWArr)
-        maxKW=KWArr.max().round(-1)+10
-        minKW=KWArr.min().round(-1)-10
-        bins = np.arange(minKW,maxKW,10)
+        maxKW=154000
+        minKW=54000
+        bins = np.arange(minKW,maxKW,1000)
         dist = np.histogram(KW,bins=bins, density=True)
-        x=dist[0]
+        x=dist[0]*1000
   
         xSum=np.sum(x)
 
@@ -451,7 +420,7 @@ class DataMiner(object):
                          
         Type=str(startMonth) + "-" + str(endMonth) + str(include);
 
-        histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'KW':y})
+        histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'MW':y})
         isoHelper.saveDf(DataTbl='RTOLoadHist', Data= histDf);
               
         return flipxCum, y
