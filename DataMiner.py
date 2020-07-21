@@ -304,7 +304,7 @@ class DataMiner(object):
 
     def PSEGLoadCurve(self, startMonth, endMonth, isoHelper, include):
 
-        PSEGLoadDf= isoHelper.getPSEGLoad(startMonth=1, endMonth=12, include=True)
+        PSEGLoadDf= isoHelper.getPSEGLoad(startMonth, endMonth, include)
 
 
         KWArr = PSEGLoadDf['Load']
@@ -397,7 +397,7 @@ class DataMiner(object):
 
     def RTOLoadCurve(self, startMonth, endMonth, isoHelper, include):
 
-        RTOLoadDf= isoHelper.getRTOLoad(startMonth=1, endMonth=12, include=True)
+        RTOLoadDf= isoHelper.getRTOLoad(startMonth, endMonth, include)
 
 
         KWArr = RTOLoadDf['Load']
