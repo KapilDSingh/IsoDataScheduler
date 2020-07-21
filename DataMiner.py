@@ -51,6 +51,7 @@ class DataMiner(object):
             
             lmpDf['timestamp'] = pd.to_datetime(lmpDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
             lmpDf['timestamp'] = pd.to_datetime(lmpDf['timestamp'])
+            lmpDf = lmpDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
             isoHelper.saveDf(DataTbl='lmpTbl', Data= lmpDf)
             i = 1
         except Exception as e:
@@ -79,6 +80,7 @@ class DataMiner(object):
             
             loadDf['timestamp'] = pd.to_datetime(loadDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
             loadDf['timestamp'] = pd.to_datetime(loadDf['timestamp'])
+            loadDf = loadDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
             if (Area =='ps'):
                 isoHelper.saveDf(DataTbl='psInstLoadTbl', Data= loadDf)
             else:
