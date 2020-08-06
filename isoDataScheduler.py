@@ -23,12 +23,16 @@ def main():
         dataMiner.fetch_hourlyMeteredLoad(True, 'CurrentYear', True,isoHelper)
         dataMiner.fetch_hourlyMeteredLoad(False, 'CurrentYear', True,isoHelper)
         meterData.fetchMeterData('550001081', 1, isoHelper)
-        dataMiner.fetch_7dayLoadForecast(True, isoHelper)
+        #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
         dataMiner.fetch_LoadForecast(True, isoHelper)
-        dataMiner.fetch_7dayLoadForecast(False, isoHelper)
+        #dataMiner.fetch_7dayLoadForecast(False, isoHelper)
         dataMiner.fetch_LoadForecast(False, isoHelper)
+        #startDateTime = pd.datetime(2019,7,1)
+        #isoHelper.mergePSEGTimeSeries(startDateTime)
+        #isoHelper.mergeRTOTimeSeries(startDateTime)
 
         df = isoHelper.getLmp_latest(nodeId='PSEG',numIntervals=6)
+
       
         print(df)
    
@@ -66,8 +70,9 @@ def main():
     dataMiner.fetch_LoadForecast(False, isoHelper)
     dataMiner.fetch_7dayLoadForecast(True, isoHelper)
     
-    startDateTime = pd.datetime(2019,7,1)
-    isoHelper.mergePartialTimeSeries(startDateTime)
+    startDateTime = pd.datetime(2020,1,1)
+    isoHelper.mergePSEGTimeSeries(startDateTime)
+    isoHelper.mergeRTOTimeSeries(startDateTime)
 
     while True:
         putIsoData(dataMiner,isoHelper)

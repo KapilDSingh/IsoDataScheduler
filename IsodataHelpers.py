@@ -61,7 +61,7 @@ class IsodataHelpers(object):
         result = connection.execute("delete from loadTbl") 
         result = connection.execute("delete from genFuelTbl") 
         result = connection.execute("delete from psMeteredLoad") 
-        result = connection.execute("delete from meterTbl")
+        #result = connection.execute("delete from meterTbl")
         result = connection.execute("delete from pjmMeteredLoad")
         connection.close()
         return
@@ -132,15 +132,22 @@ class IsodataHelpers(object):
 
         return df
 
-    def get_latest_Forecast(self, isShortTerm=True):
+    def get_latest_Forecast(self, isPSEG, isShortTerm=True):
 
         df = None
          
         try:
             if (isShortTerm == True):
-                sql_query = "select top 1 timestamp, EvaluatedAt from forecastTbl order by timestamp desc,EvaluatedAt  desc"
+                if (isPSEG):
+                    sql_query = "select top 1 timestamp, EvaluatedAt from forecastTbl order by timestamp desc,EvaluatedAt  desc"
+                else:
+                    sql_query = "select top 1 timestamp, EvaluatedAt from rtoForecastTbl order by timestamp desc,EvaluatedAt  desc"
+
             else:
-                sql_query = "select top 1 timestamp, EvaluatedAt from forecast7dayTbl order by timestamp desc,EvaluatedAt desc"
+                if (isPSEG):
+                    sql_query = "select top 1 timestamp, EvaluatedAt from forecast7dayTbl order by timestamp desc,EvaluatedAt desc"
+                else:
+                    sql_query = "select top 1 timestamp, EvaluatedAt from rtoForecast7dayTbl order by timestamp desc,EvaluatedAt desc"
 
             df = pd.read_sql_query(sql_query, self.engine) 
  
@@ -160,11 +167,15 @@ class IsodataHelpers(object):
             TimeStr = oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
             sql_query = "delete from " + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + TimeStr +"')"
             result = connection.execute(sql_query)
-
+            Data = Data.sort_values('timestamp').drop_duplicates(['timestamp'],keep='last')
             ret = self.saveDf(DataTbl, Data)
 
-            if ret==True:
-                self.mergePartialTimeSeries(oldestTimestamp)
+            if ret==True and DataTbl == 'forecastTbl':
+                self.mergePSEGTimeSeries(oldestTimestamp)
+
+            if ret==True and DataTbl == 'rtoForecastTbl':
+                self.mergeRTOTimeSeries(oldestTimestamp)
+
 
         except BaseException as e:
             print(e)
@@ -245,64 +256,55 @@ class IsodataHelpers(object):
         return df
 
 
-    def mergePartialTimeSeries(self, startTimeStamp):
+    def mergePSEGTimeSeries(self, startTimeStamp):
 
         try:
-            psInstLoadTblQuery = 'SELECT timestamp, Load as [PSEG Load] FROM psInstLoadTbl where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") 
+   
+            TimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+
+            psInstLoadTblQuery = "SELECT timestamp, Load as [PSEG Load] FROM psInstLoadTbl where timestamp  >= CONVERT(DATETIME,'" + TimeStr +"')"
             dfPsInstLoad = pd.read_sql(psInstLoadTblQuery,self.engine)
             dfPsInstLoad.reset_index(drop=True,inplace=True)
             dfPsInstLoad.set_index('timestamp', inplace=True) 
 
-            rtoInstLoadTblQuery = 'SELECT timestamp, Load as [RTO Load] FROM loadTbl where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") 
-            dfRtoInstLoad = pd.read_sql(rtoInstLoadTblQuery,self.engine)
-            dfRtoInstLoad.reset_index(drop=True,inplace=True)
-            dfRtoInstLoad.set_index('timestamp', inplace=True) 
-
-            meterTblQuery = 'SELECT timestamp, [RMS_Watts_Tot] as ConsumptionLoad FROM meterTbl   where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") 
+            meterTblQuery = "SELECT timestamp, [RMS_Watts_Tot] as ConsumptionLoad FROM meterTbl   where timestamp  >= CONVERT(DATETIME,'" + TimeStr +"')"
             dfConsumptionLoad = pd.read_sql(meterTblQuery,self.engine)
             dfConsumptionLoad.reset_index(drop=True,inplace=True)
             dfConsumptionLoad.set_index('timestamp', inplace=True) 
 
-            psVeryShortForecastQuery = 'SELECT timestamp, LoadForecast as [psVeryShortForecast], EvaluatedAt FROM  forecastTbl where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") 
+            psVeryShortForecastQuery = "SELECT timestamp, LoadForecast as [psVeryShortForecast], EvaluatedAt FROM  forecastTbl where timestamp  >= CONVERT(DATETIME,'" + TimeStr +"')"
             dfPsVeryShortForecast = pd.read_sql(psVeryShortForecastQuery,self.engine)
             dfPsVeryShortForecast = dfPsVeryShortForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
-            del dfPsVeryShortForecast['EvaluatedAt']
+            #del dfPsVeryShortForecast['EvaluatedAt']
             dfPsVeryShortForecast.reset_index(drop=True,inplace=True)
             dfPsVeryShortForecast.set_index('timestamp', inplace=True) 
 
-            rtoVeryShortForecastQuery = 'SELECT timestamp, LoadForecast as [rtoVeryShortForecast], EvaluatedAt FROM  rtoForecastTbl where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") 
-            dfRtoVeryShortForecast = pd.read_sql(rtoVeryShortForecastQuery,self.engine)
-            dfRtoVeryShortForecast = dfRtoVeryShortForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
-            del dfRtoVeryShortForecast['EvaluatedAt']
-            dfRtoVeryShortForecast.reset_index(drop=True,inplace=True)
-            dfRtoVeryShortForecast.set_index('timestamp', inplace=True) 
+
+            #psForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load Forecast] as ps7DayForecast, EvaluatedAt FROM forecast7dayTbl   where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") 
+            #dfPs7DayForecast= pd.read_sql(psForecast7dayTblQuery,self.engine)
+            #dfPs7DayForecast = dfPs7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
+            #del dfPs7DayForecast['EvaluatedAt']
+            #dfPs7DayForecast.reset_index(drop=True,inplace=True)
+            #dfPs7DayForecast.set_index('timestamp', inplace=True) 
+
+            #rtoForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load Forecast] as rto7DayForecast, EvaluatedAt FROM rtoForecast7dayTbl   where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") 
+            #dfRto7DayForecast= pd.read_sql(rtoForecast7dayTblQuery,self.engine)
+            #dfRto7DayForecast = dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
+            #del dfRto7DayForecast['EvaluatedAt']
+            #dfRto7DayForecast.reset_index(drop=True,inplace=True)
+            #dfRto7DayForecast.set_index('timestamp', inplace=True) 
 
 
-            psForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load Forecast] as ps7DayForecast, EvaluatedAt FROM forecast7dayTbl   where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") 
-            dfPs7DayForecast= pd.read_sql(psForecast7dayTblQuery,self.engine)
-            dfPs7DayForecast = dfPs7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
-            del dfPs7DayForecast['EvaluatedAt']
-            dfPs7DayForecast.reset_index(drop=True,inplace=True)
-            dfPs7DayForecast.set_index('timestamp', inplace=True) 
-
-            rtoForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load Forecast] as rto7DayForecast, EvaluatedAt FROM rtoForecast7dayTbl   where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") 
-            dfRto7DayForecast= pd.read_sql(rtoForecast7dayTblQuery,self.engine)
-            dfRto7DayForecast = dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
-            del dfRto7DayForecast['EvaluatedAt']
-            dfRto7DayForecast.reset_index(drop=True,inplace=True)
-            dfRto7DayForecast.set_index('timestamp', inplace=True) 
-
-
-            mergedDf = dfConsumptionLoad.join(dfPsInstLoad, how='outer').join(dfRtoInstLoad, how='outer')\
-                      .join(dfPsVeryShortForecast, how='outer').join(dfRtoVeryShortForecast, how='outer')\
-                      .join(dfPs7DayForecast, how='outer').join(dfRto7DayForecast, how='outer')
+            mergedDf = dfConsumptionLoad.join(dfPsInstLoad, how='outer')\
+                      .join(dfPsVeryShortForecast, how='outer')
+                      #.join(dfPs7DayForecast, how='outer')
             mergedDf.reset_index(inplace=True)
 
             connection = self.engine.connect()
 
-            result = connection.execute('delete from LoadsTbl  where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") )
-
-            self.saveDf('LoadsTbl', mergedDf)
+            result = connection.execute("delete from PSEGLoadsTbl  where timestamp  >= CONVERT(DATETIME,'" + TimeStr +"')")
+            mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
+            self.saveDf('PSEGLoadsTbl', mergedDf)
 
         except BaseException as e:
             print (e)
@@ -312,11 +314,69 @@ class IsodataHelpers(object):
             self.engine.connect().close()
             print(mergedDf)
             print(dfPsInstLoad)
-            print(dfRtoInstLoad)
             print(dfConsumptionLoad)
             print(dfPsVeryShortForecast)
-            print(dfRtoVeryShortForecast)
-            print(dfPs7DayForecast)
-            print(dfRto7DayForecast)
+
+            #print(dfPs7DayForecast)
 
         return None
+
+
+    def mergeRTOTimeSeries(self, startTimeStamp):
+
+        try:
+            TimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+
+            rtoInstLoadTblQuery ="SELECT timestamp, Load as [RTO Load] FROM loadTbl where timestamp >= CONVERT(DATETIME,'" + TimeStr +"')"
+            dfRtoInstLoad = pd.read_sql(rtoInstLoadTblQuery,self.engine)
+            dfRtoInstLoad.reset_index(drop=True,inplace=True)
+            dfRtoInstLoad.set_index('timestamp', inplace=True) 
+
+            meterTblQuery = "SELECT timestamp, [RMS_Watts_Tot] as ConsumptionLoad FROM meterTbl   where timestamp >= CONVERT(DATETIME,'" + TimeStr +"')"
+            dfConsumptionLoad = pd.read_sql(meterTblQuery,self.engine)
+            dfConsumptionLoad.reset_index(drop=True,inplace=True)
+            dfConsumptionLoad.set_index('timestamp', inplace=True) 
+
+
+            rtoVeryShortForecastQuery = "SELECT timestamp, LoadForecast as [rtoVeryShortForecast], EvaluatedAt FROM  rtoForecastTbl where timestamp >= CONVERT(DATETIME,'" + TimeStr +"')"
+            dfRtoVeryShortForecast = pd.read_sql(rtoVeryShortForecastQuery,self.engine)
+            dfRtoVeryShortForecast = dfRtoVeryShortForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
+            dfRtoVeryShortForecast['EvaluatedAt']
+            dfRtoVeryShortForecast.reset_index(drop=True,inplace=True)
+            dfRtoVeryShortForecast.set_index('timestamp', inplace=True) 
+
+
+            #rtoForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load Forecast] as rto7DayForecast, EvaluatedAt FROM rtoForecast7dayTbl   where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d") 
+            #dfRto7DayForecast= pd.read_sql(rtoForecast7dayTblQuery,self.engine)
+            #dfRto7DayForecast = dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
+            #del dfRto7DayForecast['EvaluatedAt']
+            #dfRto7DayForecast.reset_index(drop=True,inplace=True)
+            #dfRto7DayForecast.set_index('timestamp', inplace=True) 
+
+
+            mergedDf = dfConsumptionLoad.join(dfRtoInstLoad, how='outer')\
+                      .join(dfRtoVeryShortForecast, how='outer')
+                      #.join(dfRto7DayForecast, how='outer')
+            mergedDf.reset_index(inplace=True)
+
+            connection = self.engine.connect()
+
+            result = connection.execute("delete from RtoLoadsTbl  where timestamp >= CONVERT(DATETIME,'" + TimeStr +"')")
+            mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
+            self.saveDf('RtoLoadsTbl', mergedDf)
+
+        except BaseException as e:
+            print (e)
+            return None
+  
+        finally:
+            self.engine.connect().close()
+            print(mergedDf)
+            print(dfRtoInstLoad)
+            print(dfConsumptionLoad)
+            print(dfRtoVeryShortForecast)
+            #print(dfRto7DayForecast)
+
+        return None
+
+

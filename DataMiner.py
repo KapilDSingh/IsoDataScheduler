@@ -163,7 +163,7 @@ class DataMiner(object):
                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'].values).strftime('%Y-%m-%d %H:%M:%S')
                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'])
               
-               forecastDf = forecastDf.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
+               #forecastDf = forecastDf.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
                
                forecastDf = forecastDf.sort_values('timestamp',ascending=False)
 
@@ -173,7 +173,7 @@ class DataMiner(object):
                oldestTimestamp =forecastDf['timestamp'].min()
                oldestEvaluateAt = forecastDf['EvaluatedAt'].min()
  
-               dfTimeStamp = isoHelper.get_latest_Forecast(isShortTerm=True)
+               dfTimeStamp = isoHelper.get_latest_Forecast(isPSEG,isShortTerm=True)
                print(forecastDf)
 
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
@@ -234,7 +234,7 @@ class DataMiner(object):
                    newestTimestamp =forecastDf['timestamp'].max()
                    
                    oldestTimestamp =forecastDf['timestamp'].min()
-                   dfTimeStamp = isoHelper.get_latest_Forecast(isShortTerm=False)
+                   dfTimeStamp = isoHelper.get_latest_Forecast(isPSEG, isShortTerm=False)
         
 
                    if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
@@ -313,9 +313,9 @@ class DataMiner(object):
         KW=np.sort(KWArr)
         maxKW=10000
         minKW=3000
-        bins = np.arange(minKW,maxKW,100)
+        bins = np.arange(minKW,maxKW,500)
         dist = np.histogram(KW,bins=bins, density=True)
-        x=dist[0]*100
+        x=dist[0]*500
   
         xSum=np.sum(x)
 
@@ -325,7 +325,7 @@ class DataMiner(object):
         xCum = np.cumsum(x)
         
         flipxCum = 1-xCum
-        flipxCum =list(map(lambda x : x if (x > 0.0000001) else 0, flipxCum));
+        flipxCum =list(map(lambda x : x if (x > 0.00001) else 0, flipxCum));
                          
         Type=str(startMonth) + "-" + str(endMonth) + str(include);
 
