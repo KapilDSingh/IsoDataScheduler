@@ -81,10 +81,23 @@ class DataMiner(object):
             loadDf['timestamp'] = pd.to_datetime(loadDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
             loadDf['timestamp'] = pd.to_datetime(loadDf['timestamp'])
             loadDf = loadDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
-            if (Area =='ps'):
-                isoHelper.saveDf(DataTbl='psInstLoadTbl', Data= loadDf)
+            if (numRows ==1):
+                if (Area =='ps'):
+                    ret=isoHelper.saveDf(DataTbl='psInstLoadTbl', Data= loadDf)
+                    if ret==True:
+
+                        mergeDt = loadDf['timestamp'][0]
+                        mergeDt = mergeDt.replace(minute=mergeDt.minute-0)
+                        isoHelper.mergePSEGTimeSeries(mergeDt)
+                        i=1
+                else:
+                    isoHelper.saveDf(DataTbl='loadTbl', Data= loadDf)
             else:
-                isoHelper.saveDf(DataTbl='loadTbl', Data= loadDf)
+                if (Area =='ps'):
+                    ret=isoHelper.saveDf(DataTbl='psInstLoadTbl', Data= loadDf)
+                else:
+                    isoHelper.saveDf(DataTbl='loadTbl', Data= loadDf)
+
 
             i = 1
         except Exception as e:

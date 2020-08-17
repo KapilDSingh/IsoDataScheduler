@@ -20,8 +20,8 @@ def main():
         dataMiner.fetch_InstantaneousLoad(1, 'PJM RTO',isoHelper)
 
         dataMiner.fetch_GenFuel(11, isoHelper)
-        dataMiner.fetch_hourlyMeteredLoad(True, 'CurrentYear', True,isoHelper)
-        dataMiner.fetch_hourlyMeteredLoad(False, 'CurrentYear', True,isoHelper)
+        #dataMiner.fetch_hourlyMeteredLoad(True, 'CurrentYear', True,isoHelper)
+        #dataMiner.fetch_hourlyMeteredLoad(False, 'CurrentYear', True,isoHelper)
         meterData.fetchMeterData('550001081', 1, isoHelper)
         #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
         dataMiner.fetch_LoadForecast(True, isoHelper)
@@ -48,12 +48,12 @@ def main():
 
     meterData.fetchMeterData('550001081', 1000, isoHelper)
 
-    dataMiner.fetch_hourlyMeteredLoad(True, 'LastYear', False, isoHelper)
-    dataMiner.fetch_hourlyMeteredLoad(False, 'LastYear', False, isoHelper)
+    #dataMiner.fetch_hourlyMeteredLoad(True, 'LastYear', False, isoHelper)
+    #dataMiner.fetch_hourlyMeteredLoad(False, 'LastYear', False, isoHelper)
 
     #meterData.genHist('9214411', isoHelper)
-    dataMiner.genPSEGLoadHist(isoHelper)
-    dataMiner.genRTOLoadHist(isoHelper)
+    #dataMiner.genPSEGLoadHist(isoHelper)
+    #dataMiner.genRTOLoadHist(isoHelper)
    
     #rng.strftime('%B %d, %Y, %r')
     i=1
@@ -68,7 +68,7 @@ def main():
     
     dataMiner.fetch_LoadForecast(True, isoHelper)
     dataMiner.fetch_LoadForecast(False, isoHelper)
-    dataMiner.fetch_7dayLoadForecast(True, isoHelper)
+    #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
     
     startDateTime = pd.datetime(2020,1,1)
     isoHelper.mergePSEGTimeSeries(startDateTime)
