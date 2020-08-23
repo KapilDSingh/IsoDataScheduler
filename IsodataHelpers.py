@@ -162,7 +162,20 @@ class IsodataHelpers(object):
             self.engine.connect().close()
 
         return df
+    def fetchLoadThresholds (month):
+        try:
+            sql_query = "SELECT TOP (1000) [MONTH_Num], [  PJM 2020  ], [  PJM 2021  ], [  PSEG 2020  ],[  PSEG 2021  ],[  Billing Day  ],[  ThresholdPJM  ],[  ThresholdPSEG  ] \
+                        FROM [ISODB].[dbo].[PJMPSEGForecast2020_2021] where [MONTH_Num] = " +  month
 
+            df = pd.read_sql_query(sql_query, self.engine) 
+ 
+        except BaseException as e:
+          print(e)
+  
+        finally:
+            self.engine.connect().close()
+
+        return df
 
     def saveForecastDf(self,oldestTimestamp, DataTbl='forecastTbl', Data='forecastDf', isShortTerm=True):
         
@@ -171,7 +184,7 @@ class IsodataHelpers(object):
             TimeStr = oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
             sql_query = "delete from " + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
             result = connection.execute(sql_query)
-            Data = Data.sort_values('timestamp').drop_duplicates(['timestamp'],keep='last')
+            
             ret = self.saveDf(DataTbl, Data)
 
             #if ret==True and DataTbl == 'forecastTbl':
@@ -326,9 +339,9 @@ class IsodataHelpers(object):
         finally:
 
             print(mergedDf)
-            print(dfPsInstLoad)
-            print(dfConsumptionLoad)
-            print(dfPsVeryShortForecast)
+            #print(dfPsInstLoad)
+            #print(dfConsumptionLoad)
+            #print(dfPsVeryShortForecast)
 
             #print(dfPs7DayForecast)
 
@@ -388,10 +401,10 @@ class IsodataHelpers(object):
   
         finally:
             self.engine.connect().close()
-            print(mergedDf)
-            print(dfRtoInstLoad)
-            print(dfConsumptionLoad)
-            print(dfRtoVeryShortForecast)
+            #print(mergedDf)
+            #print(dfRtoInstLoad)
+            #print(dfConsumptionLoad)
+            #print(dfRtoVeryShortForecast)
             #print(dfRto7DayForecast)
 
         return None

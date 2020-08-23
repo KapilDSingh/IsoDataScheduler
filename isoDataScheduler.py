@@ -11,6 +11,9 @@ from DataMiner import DataMiner
 from IsodataHelpers import IsodataHelpers
 from meterData import MeterData
 import matplotlib
+from datetime import datetime
+from pytz import timezone
+from GridCPShaving import GridCPShaving
 
 def main():
     def putIsoData(dataMiner, isoHelper):
@@ -24,9 +27,9 @@ def main():
         #dataMiner.fetch_hourlyMeteredLoad(False, 'CurrentYear', True,isoHelper)
         meterData.fetchMeterData('550001081', 1, isoHelper)
         #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
-        dataMiner.fetch_LoadForecast(True, isoHelper)
+        dataMiner.fetch_LoadForecast(True, isoHelper,GCPShave)
         #dataMiner.fetch_7dayLoadForecast(False, isoHelper)
-        dataMiner.fetch_LoadForecast(False, isoHelper)
+        dataMiner.fetch_LoadForecast(False, isoHelper,GCPShave)
         #startDateTime = pd.datetime(2019,7,1)
         #isoHelper.mergePSEGTimeSeries(startDateTime)
         #isoHelper.mergeRTOTimeSeries(startDateTime)
@@ -43,21 +46,26 @@ def main():
     dataMiner = DataMiner()
     isoHelper = IsodataHelpers()
     meterData = MeterData()
+    GCPShave = GridCPShaving()
 
     isoHelper.emptyAllTbls()
 
     meterData.fetchMeterData('550001081', 1000, isoHelper)
-
-    #dataMiner.fetch_hourlyMeteredLoad(True, 'LastYear', False, isoHelper)
-    #dataMiner.fetch_hourlyMeteredLoad(False, 'LastYear', False, isoHelper)
+    currentDate =datetime.today();
+    eastern = timezone('US/Eastern')
+    startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
+    endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
+   
+    dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
+    dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
 
     #meterData.genHist('9214411', isoHelper)
-    #dataMiner.genPSEGLoadHist(isoHelper)
-    #dataMiner.genRTOLoadHist(isoHelper)
+    dataMiner.genPSEGLoadHist(isoHelper)
+    dataMiner.genRTOLoadHist(isoHelper)
    
     #rng.strftime('%B %d, %Y, %r')
     i=1
-    
+   
 
     dataMiner.fetch_LMP(8640, isoHelper)
     dataMiner.fetch_InstantaneousLoad(8640, 'ps',isoHelper)
@@ -66,10 +74,10 @@ def main():
     dataMiner.fetch_GenFuel(528, isoHelper)
 
     
-    dataMiner.fetch_LoadForecast(True, isoHelper)
-    dataMiner.fetch_LoadForecast(False, isoHelper)
+    dataMiner.fetch_LoadForecast(True, isoHelper, GCPShave)
+    dataMiner.fetch_LoadForecast(False, isoHelper, GCPShave)
     #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
-    
+
     startDateTime = pd.datetime(2020,1,1)
     isoHelper.mergePSEGTimeSeries(startDateTime)
     isoHelper.mergeRTOTimeSeries(startDateTime)

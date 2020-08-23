@@ -136,7 +136,7 @@ class DataMiner(object):
             return
 
 
-    def fetch_LoadForecast(self, isPSEG, isoHelper):
+    def fetch_LoadForecast(self, isPSEG, isoHelper,GCPShave):
         try:
                if (isPSEG == True):
                     Area = 'pse&g/midatl'
@@ -175,21 +175,25 @@ class DataMiner(object):
 
                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'].values).strftime('%Y-%m-%d %H:%M:%S')
                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'])
-              
+               
+               forecastDf['Peak'] = 0 
+
                #forecastDf = forecastDf.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
                
                forecastDf = forecastDf.sort_values('timestamp',ascending=False)
 
                newestTimestamp =forecastDf['timestamp'].max()
-               newestEvaluateAt = forecastDf['EvaluatedAt'].max()
+               #newestEvaluateAt = forecastDf['EvaluatedAt'].max()
 
                oldestTimestamp =forecastDf['timestamp'].min()
-               oldestEvaluateAt = forecastDf['EvaluatedAt'].min()
- 
+               #oldestEvaluateAt = forecastDf['EvaluatedAt'].min()
+               forecastDf = forecastDf.sort_values('timestamp').drop_duplicates(['timestamp'],keep='last')
                dfTimeStamp = isoHelper.get_latest_Forecast(isPSEG,isShortTerm=True)
+               forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
                print(forecastDf)
-
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
+                   forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
+
                    print (forecastDf)
                    if (isPSEG == True):
                        isoHelper.saveForecastDf(oldestTimestamp, DataTbl='forecastTbl', Data= forecastDf, isShortTerm=True)
@@ -199,7 +203,7 @@ class DataMiner(object):
                i = 1
 
         except Exception as e:
-               print("[Errno {0}] {1}".format(e.errno, e.strerror))
+               print(e)
         finally:
                 return
 
@@ -267,7 +271,7 @@ class DataMiner(object):
 
 
 
-    def fetch_hourlyMeteredLoad(self, isPSEG, StartTime, update, isoHelper):
+    def fetch_hourlyMeteredLoad(self, isPSEG, startMeteredPeriod, endMeteredPeriod, update, isoHelper):
         try:
              if (isPSEG == True):
                     load_area = 'ps'
@@ -276,12 +280,14 @@ class DataMiner(object):
 
              params = urllib.parse.urlencode({
              # Request parameters
-   
+             
+
                 'rowCount': '50000',
                 'sort': 'datetime_beginning_ept',
                 'order': 'asc',
                 'startRow': '1',
-                'datetime_beginning_ept':StartTime,
+                'datetime_beginning_ept':startMeteredPeriod.strftime('%Y-%m-%d %H:%M') + " to " +endMeteredPeriod.strftime('%Y-%m-%d %H:%M'), 
+               
                 'fields': 'datetime_beginning_ept,load_area, mw, is_verified',
                 'load_area': load_area,
                 'format':'json'})
@@ -338,11 +344,12 @@ class DataMiner(object):
         xCum = np.cumsum(x)
         
         flipxCum = 1-xCum
-        flipxCum =list(map(lambda x : x if (x > 0.00001) else 0, flipxCum));
-                         
+        #flipxCum =list(map(lambda x : x if (x > 0.00001) else None, flipxCum));
+        #flipxCum =list(map(lambda x : x if (x >0) else None, flipxCum));             
         Type=str(startMonth) + "-" + str(endMonth) + str(include);
 
         histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'MW':y})
+        #histDf.dropna(inplace=True)
         isoHelper.saveDf(DataTbl='PSEGLoadHist', Data= histDf);
               
         return flipxCum, y
@@ -431,11 +438,12 @@ class DataMiner(object):
         xCum = np.cumsum(x)
         
         flipxCum = 1-xCum
-        flipxCum =list(map(lambda x : x if (x > 0.0000001) else 0, flipxCum));
+        flipxCum =list(map(lambda x : x if (x > 0.0000001) else None, flipxCum));
                          
         Type=str(startMonth) + "-" + str(endMonth) + str(include);
 
         histDf = pd.DataFrame({'Type':Type, 'Percentile':flipxCum, 'MW':y})
+        #histDf.dropna(inplace=True)
         isoHelper.saveDf(DataTbl='RTOLoadHist', Data= histDf);
               
         return flipxCum, y

@@ -30,6 +30,9 @@
     <Compile Include="DataMiner.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="GridCPShaving.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="IsodataHelpers.py">
       <SubType>Code</SubType>
     </Compile>
