@@ -193,7 +193,7 @@ class DataMiner(object):
                #print(forecastDf)
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
                    forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
-
+                   forecastDf.reset_index(inplace=True)
                    print (forecastDf)
                    if (isPSEG == True):
                        isoHelper.saveForecastDf(oldestTimestamp, DataTbl='forecastTbl', Data= forecastDf, isShortTerm=True)
