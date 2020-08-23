@@ -58,7 +58,7 @@ class MeterData(object):
 
         except Exception as e:
           print(e)
-          print("Fetch Meter Data Unexpected error:", sys.exc_info()[0])
+          print("Fetch Meter Data Unexpected error:",e)
         finally:
             return
 

@@ -44,7 +44,7 @@ class IsodataHelpers(object):
 
           print(e)
 
-          print("Save DF Unexpected error:", sys.exc_info()[0])
+          print("Save DF Unexpected error:", e)
 
         finally:
             
@@ -200,7 +200,7 @@ class IsodataHelpers(object):
         finally:
             self.engine.connect().close()
 
-        return df
+        return
 
 
     def reconcileForrecastdata(self,  MeterId='9214411', startMonth=1, endMonth=12, include=True):

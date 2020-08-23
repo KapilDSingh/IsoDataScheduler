@@ -102,7 +102,7 @@ class DataMiner(object):
             i = 1
         except Exception as e:
           print(e)
-          print("Fetch Instantaneous Load Unexpected error:", sys.exc_info()[0])
+          print("Fetch Instantaneous Load Unexpected error:", e)
         finally:
             return
 
@@ -131,7 +131,7 @@ class DataMiner(object):
             i = 1
         except Exception as e:
           print(e)
-          print("Fetch GenFuel Unexpected error:", sys.exc_info()[0])
+          print("Fetch GenFuel Unexpected error:", e)
         finally:
             return
 
@@ -264,7 +264,7 @@ class DataMiner(object):
                    i = 1
 
             except Exception as e:
-                   print("[Errno {0}] {1}".format(e.errno, e.strerror))
+                   print(e)
             finally:
                     return
                    
@@ -315,7 +315,7 @@ class DataMiner(object):
                 isoHelper.saveDf(DataTbl='pjmMeteredLoad', Data= forecastDf)
 
         except Exception as e:
-               print("[Errno {0}] {1}".format(e.errno, e.strerror))
+               print(e)
         finally:
                 return
 
