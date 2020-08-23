@@ -10,7 +10,7 @@ class GridCPShaving(object):
     def peakSignal(self, forecastDF, isPSEG):
 
         try:
-            register_matplotlib_converters()
+            #register_matplotlib_converters()
             forecastDF = forecastDF.set_index('timestamp')
 
             if (isPSEG):
@@ -35,16 +35,16 @@ class GridCPShaving(object):
                 peakForecastDf.Peak[peaks_negative] = -1
 
 
-            plt.figure(figsize = (14, 8))
-            plt.plot_date(forecastDF.index, forecastDF.LoadForecast, linewidth = 2)
+            #plt.figure(figsize = (14, 8))
+            #plt.plot_date(forecastDF.index, forecastDF.LoadForecast, linewidth = 2)
 
-            plt.plot_date(forecastDF.index[peaks_positive], forecastDF.LoadForecast[peaks_positive], 'ro', label = 'positive peaks')
-            plt.plot_date(forecastDF.index[peaks_negative], forecastDF.LoadForecast[peaks_negative], 'go', label = 'negative peaks')
+            #plt.plot_date(forecastDF.index[peaks_positive], forecastDF.LoadForecast[peaks_positive], 'ro', label = 'positive peaks')
+            #plt.plot_date(forecastDF.index[peaks_negative], forecastDF.LoadForecast[peaks_negative], 'go', label = 'negative peaks')
  
-            plt.xlabel('timestamp')
-            plt.ylabel('Load Forecast (MW)')
-            plt.legend(loc = 4)
-            plt.show()
+            #plt.xlabel('timestamp')
+            #plt.ylabel('Load Forecast (MW)')
+            #plt.legend(loc = 4)
+            #plt.show()
 
         except Exception as e:
             print(e)

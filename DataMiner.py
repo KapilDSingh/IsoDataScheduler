@@ -188,7 +188,7 @@ class DataMiner(object):
                oldestTimestamp =forecastDf['timestamp'].min()
                #oldestEvaluateAt = forecastDf['EvaluatedAt'].min()
                forecastDf = forecastDf.sort_values('timestamp').drop_duplicates(['timestamp'],keep='last')
-               #dfTimeStamp = isoHelper.get_latest_Forecast(isPSEG,isShortTerm=True)
+               dfTimeStamp = isoHelper.get_latest_Forecast(isPSEG,isShortTerm=True)
                #forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
                #print(forecastDf)
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
