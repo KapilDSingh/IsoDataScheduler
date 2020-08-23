@@ -92,7 +92,7 @@ class IsodataHelpers(object):
         finally:
             self.engine.connect().close()
 
-        return df
+        return
 
     def getLmp_latest(self,  nodeId='PSEG', numIntervals=12):
 
