@@ -33,7 +33,7 @@ class IsodataHelpers(object):
         ret = True
 
         try:
-            Data.reset_index(drop=True, inplace= True)
+            #Data.reset_index( inplace= True)
             Data.to_sql(DataTbl, self.engine, if_exists = 'append',index=False)
 
         except sqlalchemy.exc.IntegrityError as e:
@@ -63,6 +63,9 @@ class IsodataHelpers(object):
 
         result = connection.execute("delete from lmpTbl")  
         result = connection.execute("delete from loadTbl") 
+        result = connection.execute("delete from psInstLoadTbl") 
+        result = connection.execute("delete from psHrlyLoadTbl") 
+        result = connection.execute("delete from rtoHrlyLoadTbl") 
         result = connection.execute("delete from genFuelTbl") 
         result = connection.execute("delete from psMeteredLoad") 
         #result = connection.execute("delete from meterTbl")
@@ -162,6 +165,69 @@ class IsodataHelpers(object):
             self.engine.connect().close()
 
         return df
+
+
+
+    def get_current_hr_load(self, loadDf, Area, isoHelper):
+
+        df = None
+        
+        if (Area == 'ps'):
+            HrlyTbl = 'psHrlyLoadTbl'
+            InstLoadTbl = 'psInstLoadTbl'
+        else:
+             HrlyTbl = 'rtoHrlyLoadTbl'
+             InstLoadTbl = 'loadTbl'
+        
+        try:
+            if (len(loadDf.index) == 1):
+
+                timestamp = pd.to_datetime(loadDf.index[0])
+
+                timestamp = timestamp.replace(minute=0, second = 0, microsecond =0)
+                
+                if (timestamp == pd.to_datetime(loadDf.index[0])):
+                    timestamp -= timedelta(hours=1)                
+
+                TimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+
+                connection = self.engine.connect()
+
+                instLoadTblQuery = "SELECT timestamp, Area, Load FROM " + InstLoadTbl + " where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')"
+                
+
+                
+
+                loadDf = pd.read_sql(instLoadTblQuery,self.engine)
+                result = connection.execute("delete from " + HrlyTbl + "  where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')")
+
+                self.engine.connect().close()
+
+                loadDf.reset_index(drop=True,inplace=True)
+                loadDf.set_index('timestamp', inplace=True) 
+            
+            hrlyDataDf = loadDf.resample('H',label='right', closed='right').agg({"Area":'size',"Load":'sum'})
+           
+            hrlyDataDf.rename(columns={"Area": "NumReads",  "Load":"HrlyInstLoad"},inplace =True)
+            hrlyDataDf.reset_index(inplace=True)
+
+            ret=isoHelper.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
+
+
+            if (ret==False):
+                print("could not save hrlyDataDf")
+
+        except BaseException as e:
+            print(e)
+  
+        finally:
+            self.engine.connect().close()
+
+            print(hrlyDataDf)
+            return hrlyDataDf
+
+
+
     def fetchLoadThresholds (month):
         try:
             sql_query = "SELECT TOP (1000) [MONTH_Num], [  PJM 2020  ], [  PJM 2021  ], [  PSEG 2020  ],[  PSEG 2021  ],[  Billing Day  ],[  ThresholdPJM  ],[  ThresholdPSEG  ] \
@@ -177,22 +243,57 @@ class IsodataHelpers(object):
 
         return df
 
-    def saveForecastDf(self,oldestTimestamp, DataTbl='forecastTbl', Data='forecastDf', isShortTerm=True):
+    def saveForecastDf(self,oldestTimestamp, isPSEG, forecastDf, isShortTerm=True):
         
         try:
+            if (isPSEG ==True):
+                DataTbl = 'forecastTbl'
+                HrlyTbl = 'psHrlyForecstTbl'
+            else:
+                DataTbl = 'rtoForecastTbl'
+                HrlyTbl = 'rtoHrlyForecstTbl'
+             
             connection = self.engine.connect()
             TimeStr = oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
             sql_query = "delete from " + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
             result = connection.execute(sql_query)
+
+            ret = self.saveDf(DataTbl, forecastDf)
+            if (ret == False):
+                print ("save instant ForecastDf failed")
+
             
-            ret = self.saveDf(DataTbl, Data)
+            timestamp = pd.to_datetime(oldestTimestamp)
 
-            #if ret==True and DataTbl == 'forecastTbl':
-            #    self.mergePSEGTimeSeries(oldestTimestamp)
+            #timestamp = timestamp.replace(minute=0, second = 0, microsecond =0)
+                
+            #if (timestamp == pd.to_datetime(oldestTimestamp)):
+            #    timestamp -= timedelta(hours=1)                
 
-            #if ret==True and DataTbl == 'rtoForecastTbl':
-            #    self.mergeRTOTimeSeries(oldestTimestamp)
+            TimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
 
+            connection = self.engine.connect()
+
+            forecstLoadTblQuery = "SELECT timestamp, Area, LoadForecast FROM " + DataTbl + " where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')"
+
+            forecstLoadDf = pd.read_sql(forecstLoadTblQuery,self.engine)
+            result = connection.execute("delete from " + HrlyTbl ) #+ "  where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')")
+
+            self.engine.connect().close()
+
+            forecstLoadDf.reset_index(drop=True,inplace=True)
+            forecstLoadDf.set_index('timestamp', inplace=True) 
+            
+            hrlyDataDf = forecstLoadDf.resample('H',label='right', closed='right').agg({"Area":'size',"LoadForecast":'sum'})
+           
+            hrlyDataDf.rename(columns={"Area": "ForecstNumReads",  "LoadForecast":"HrlyForecstLoad"},inplace =True)
+            hrlyDataDf.reset_index(inplace=True)
+
+            ret=self.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
+
+
+            if (ret==False):
+                print("could not save hrlyDataDf")
 
         except BaseException as e:
             print(e)
@@ -200,31 +301,9 @@ class IsodataHelpers(object):
         finally:
             self.engine.connect().close()
 
-        return
+            print(hrlyDataDf)
+            return hrlyDataDf
 
-
-    def reconcileForrecastdata(self,  MeterId='9214411', startMonth=1, endMonth=12, include=True):
-
-        df = None
- 
-        condition = "  (month(timestamp) >='" + str(startMonth) + "' and month(timestamp) <='" + str(endMonth) + "' )"
-        if include == True:
-           condition
-        else:
-           condition = "  not " + condition
-        
-        try:
-            sql_query = "select KW from dbo.PSEGMeter where MeterId = '" + MeterId + "' and " + condition + "    order by timestamp asc"
-
-            df = pd.read_sql_query(sql_query, self.engine) 
- 
-        except BaseException as e:
-          print(e)
-  
-        finally:
-            self.engine.connect().close()
-
-        return df
 
     def getPSEGLoad(self, startMonth=1, endMonth=12, include=True):
 
@@ -321,7 +400,7 @@ class IsodataHelpers(object):
 
             mergedDf = dfConsumptionLoad.join(dfPsInstLoad, how='outer')\
                       .join(dfPsVeryShortForecast, how='outer')
-                      #.join(dfPs7DayForecast, how='outer')
+                      
             mergedDf.reset_index(inplace=True)
 
             connection = self.engine.connect()
@@ -338,14 +417,14 @@ class IsodataHelpers(object):
   
         finally:
 
-            print(mergedDf)
+            #print(mergedDf)
             #print(dfPsInstLoad)
             #print(dfConsumptionLoad)
             #print(dfPsVeryShortForecast)
 
             #print(dfPs7DayForecast)
 
-        return None
+            return mergedDf
 
 
     def mergeRTOTimeSeries(self, startTimeStamp):
@@ -410,28 +489,5 @@ class IsodataHelpers(object):
         return None
 
 
-    def deleteStaleForecastDf(self,oldestTimestamp, DataTbl='forecastTbl', Data='forecastDf', isShortTerm=True):
-        
-        try:
-            connection = self.engine.connect()
-            TimeStr = oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
-            sql_query = "delete from " + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
-            result = connection.execute(sql_query)
-            Data = Data.sort_values('timestamp').drop_duplicates(['timestamp'],keep='last')
-            ret = self.saveDf(DataTbl, Data)
-
-            #if ret==True and DataTbl == 'forecastTbl':
-            #    self.mergePSEGTimeSeries(oldestTimestamp)
-
-            #if ret==True and DataTbl == 'rtoForecastTbl':
-            #    self.mergeRTOTimeSeries(oldestTimestamp)
-
-
-        except BaseException as e:
-            print(e)
-  
-        finally:
-            self.engine.connect().close()
-
-        return df
+   
 

@@ -81,32 +81,33 @@ class DataMiner(object):
             loadDf['timestamp'] = pd.to_datetime(loadDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
             loadDf['timestamp'] = pd.to_datetime(loadDf['timestamp'])
             loadDf = loadDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
-            if (numRows ==1):
-                if (Area =='ps'):
-                    ret=isoHelper.saveDf(DataTbl='psInstLoadTbl', Data= loadDf)
-                    if ret==True:
 
-                        mergeDt = loadDf['timestamp'][0]
-                        mergeDt = mergeDt.replace(minute=mergeDt.minute-0)
-                        isoHelper.mergePSEGTimeSeries(mergeDt)
-                        i=1
-                else:
-                    isoHelper.saveDf(DataTbl='loadTbl', Data= loadDf)
+            if (Area =='ps'):
+                ret=isoHelper.saveDf(DataTbl='psInstLoadTbl', Data= loadDf)
             else:
+                ret=isoHelper.saveDf(DataTbl='loadTbl', Data= loadDf)
+
+            if ((numRows ==1) and  ret==True) :
+
+                mergeDt = loadDf['timestamp'][0]
+                mergeDt = mergeDt.replace(minute=mergeDt.minute-0)
+                     
                 if (Area =='ps'):
-                    ret=isoHelper.saveDf(DataTbl='psInstLoadTbl', Data= loadDf)
+                    isoHelper.mergePSEGTimeSeries(mergeDt)
                 else:
-                    isoHelper.saveDf(DataTbl='loadTbl', Data= loadDf)
+                    isoHelper.mergeRTOTimeSeries(mergeDt)
 
 
-            i = 1
+            loadDf.set_index("timestamp", inplace = True)
+            hrlyLoadDf = isoHelper.get_current_hr_load(loadDf, Area,isoHelper)
+
         except Exception as e:
           print(e)
           print("Fetch Instantaneous Load Unexpected error:", e)
         finally:
             return
 
-        #https://api.pjm.com/api/v1/gen_by_fuel?rowCount=100&sort=datetime_beginning_ept&order=Desc&startRow=1&is_renewable=True
+
 
     def fetch_GenFuel(self, numRows, isoHelper):
 
@@ -189,16 +190,17 @@ class DataMiner(object):
                #oldestEvaluateAt = forecastDf['EvaluatedAt'].min()
                forecastDf = forecastDf.sort_values('timestamp').drop_duplicates(['timestamp'],keep='last')
                dfTimeStamp = isoHelper.get_latest_Forecast(isPSEG,isShortTerm=True)
-               #forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
-               #print(forecastDf)
+
+               forecastDf = forecastDf.set_index('timestamp')
+
+               forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
+              
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
                    forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
-                   forecastDf.reset_index(inplace=True)
-                   print (forecastDf)
-                   if (isPSEG == True):
-                       isoHelper.saveForecastDf(oldestTimestamp, DataTbl='forecastTbl', Data= forecastDf, isShortTerm=True)
-                   else:
-                       isoHelper.saveForecastDf(oldestTimestamp, DataTbl='rtoForecastTbl', Data= forecastDf, isShortTerm=True)
+
+                   forecastDf.reset_index( inplace=True)
+
+                   isoHelper.saveForecastDf(oldestTimestamp, isPSEG, forecastDf= forecastDf, isShortTerm=True)
                 
                i = 1
 
@@ -257,9 +259,9 @@ class DataMiner(object):
                    if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
                        print (forecastDf)
                    if (isPSEG == True):
-                       isoHelper.saveForecastDf(oldestTimestamp, DataTbl='forecast7dayTbl', Data= forecastDf, isShortTerm=False)
+                       isoHelper.saveForecastDf(oldestTimestamp, isPSEG, forecastDf= forecastDf, isShortTerm=False)
                    else:
-                       isoHelper.saveForecastDf(oldestTimestamp, DataTbl='rtoForecast7dayTbl', Data= forecastDf, isShortTerm=False)
+                       isoHelper.saveForecastDf(oldestTimestamp, isPSEG, forecastDf= forecastDf, isShortTerm=False)
 
                    i = 1
 

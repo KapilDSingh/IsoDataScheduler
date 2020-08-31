@@ -11,8 +11,7 @@ class GridCPShaving(object):
 
         try:
             #register_matplotlib_converters()
-            forecastDF = forecastDF.set_index('timestamp')
-
+            
             if (isPSEG):
                 maxLoadHeight = 4500
                 minLoadHeight = -4000
@@ -26,13 +25,11 @@ class GridCPShaving(object):
             # find all the peaks that associated with the negative peaks
             peaks_negative, _ = scipy.signal.find_peaks(-forecastDF.LoadForecast, height = minLoadHeight, threshold = None, distance=500)
 
-            peakForecastDf = forecastDF
-            
             if (len(peaks_positive) > 0):
-                peakForecastDf.Peak[peaks_positive] = 1
+                forecastDF.Peak[peaks_positive] = 1
             
             if (len(peaks_negative)>0):
-                peakForecastDf.Peak[peaks_negative] = -1
+                forecastDF.Peak[peaks_negative] = -1
 
 
             #plt.figure(figsize = (14, 8))
@@ -45,12 +42,11 @@ class GridCPShaving(object):
             #plt.ylabel('Load Forecast (MW)')
             #plt.legend(loc = 4)
             #plt.show()
-
         except Exception as e:
             print(e)
         finally:
-            peakForecastDf.reset_index()
-            return peakForecastDf
+           
+            return forecastDF
 
 
 
