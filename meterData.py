@@ -31,16 +31,16 @@ class MeterData(object):
 
 
     
-    def fetchMeterData(self, meters,  numReads, isoHelper):
+    def fetchMeterData(self, meter,  numReads, isoHelper):
 
         try:
             numReads = str(numReads)     
-            r = self.http.request('GET','https://io.ekmpush.com/readMeter?key=NjUyMzc0MjQ6Z3NaVmhEd20&meters='+ meters + '&ver=v4&fmt=json&cnt=' + numReads + '&tz=America~New_York&fields=RMS_Volts_Ln_1~RMS_Volts_Ln_2~RMS_Volts_Ln_3~RMS_Watts_Tot~Power_Factor_Ln_1~Power_Factor_Ln_2~Power_Factor_Ln_3&status=good ')
+            r = self.http.request('GET','https://io.ekmpush.com/readMeter?key=NjUyMzc0MjQ6Z3NaVmhEd20&meters='+ meter + '&ver=v4&fmt=json&cnt=' + numReads + '&tz=America~New_York&fields=RMS_Volts_Ln_1~RMS_Volts_Ln_2~RMS_Volts_Ln_3~RMS_Watts_Tot~Power_Factor_Ln_1~Power_Factor_Ln_2~Power_Factor_Ln_3&status=good ')
             jsonMeter = json.loads(r.data)
             jsonElectricData = jsonMeter['readMeter']['ReadSet'][0]['ReadData']
             meterDf = pd.DataFrame(jsonElectricData)
             meterDf.insert (1, 'timestamp',  pd.to_datetime(meterDf['Date'] + ' '+meterDf['Time']),allow_duplicates = False) 
-            meterDf.insert(1, 'MeterID', meters, allow_duplicates = True)
+            meterDf.insert(1, 'MeterID', meter, allow_duplicates = True)
       
             timezone = pytz.timezone("America/New_York")
       
@@ -51,10 +51,11 @@ class MeterData(object):
 
             meterDf = meterDf.astype({'RMS_Watts_Tot': float,  'RMS_Volts_Ln_1': float,  'RMS_Volts_Ln_2': float,  'RMS_Volts_Ln_3': float,  
            'Power_Factor_Ln_1': float, 'Power_Factor_Ln_2': float, 'Power_Factor_Ln_3': float})
-            print(meterDf)
+
             isoHelper.saveDf(DataTbl='meterTbl', Data= meterDf);
 
-            i=1
+            meterDf.set_index("timestamp", inplace = True)
+            self.get_current_hr_consumption(meter, meterDf, isoHelper)
 
         except Exception as e:
           print(e)
@@ -121,3 +122,71 @@ class MeterData(object):
         self.LoadCurveUtilityMeter(meter, 11, 11, isoHelper, True);
         self.LoadCurveUtilityMeter(meter, 12, 12, isoHelper, True);
         return
+
+
+    def get_current_hr_consumption(self, meter, meterDf, isoHelper):
+
+        df = None
+  
+        HrlyTbl = 'HrlyMeterTbl'
+                    
+        
+        try:
+            if (len(meterDf.index) == 1):
+
+                timestamp = pd.to_datetime(meterDf.index[0])
+
+                timestamp = timestamp.replace(minute=0, second = 0, microsecond =0)
+                
+                if (timestamp == pd.to_datetime(meterDf.index[0])):
+                    timestamp -= timedelta(hours=1)                
+            
+                TimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+
+                meterTblQuery = "SELECT  [MeterID]\
+                                    ,[timestamp]\
+                                    ,[RMS_Watts_Tot]\
+                                    ,[RMS_Volts_Ln_1]\
+                                    ,[RMS_Volts_Ln_2]\
+                                    ,[RMS_Volts_Ln_3]\
+                                    ,[Power_Factor_Ln_1]\
+                                    ,[Power_Factor_Ln_2]\
+                                    ,[Power_Factor_Ln_3]\
+                                    FROM [ISODB].[dbo].[meterTbl] where (timestamp  >  CONVERT(DATETIME,'" + TimeStr + "')) and ( MeterID  = '" + meter + "')"
+                 
+                meterDf = pd.read_sql(meterTblQuery,isoHelper.engine)
+                
+
+                isoHelper.engine.connect().close()
+
+                meterDf.reset_index(drop=True,inplace=True)
+                meterDf.set_index('timestamp', inplace=True) 
+            
+            meterDf.drop(columns=['RMS_Volts_Ln_2','RMS_Volts_Ln_3', 'Power_Factor_Ln_1','Power_Factor_Ln_2','Power_Factor_Ln_3'], inplace=True)
+
+            hrlyDataDf = meterDf.resample('H',label='right', closed='right').agg({"RMS_Volts_Ln_1":'size',"RMS_Watts_Tot":'sum'})
+
+            hrlyDataDf.reset_index(inplace=True)
+            print(hrlyDataDf)
+            hrlyDataDf.insert(1, 'MeterID', meter, allow_duplicates = True)
+           
+            hrlyDataDf.rename(columns={"RMS_Volts_Ln_1": "NumReads",  "RMS_Watts_Tot":"HrlyWatts"},inplace =True)
+
+            oldestTimestamp =hrlyDataDf['timestamp'].min()
+            isoHelper.clearTbl(oldestTimestamp, HrlyTbl)
+
+
+            ret  = isoHelper.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
+
+
+            if (ret==False):
+                print("could not save MeterhrlyDataDf")
+
+        except BaseException as e:
+            print(e)
+  
+        finally:
+            isoHelper.engine.connect().close()
+
+            print(hrlyDataDf)
+            return hrlyDataDf

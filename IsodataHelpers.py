@@ -50,26 +50,42 @@ class IsodataHelpers(object):
             
             return ret
 
-    def emptyTbl(self,tblName):
-        connection = self.engine.connect()
-        result = connection.execute("delete from " + tblName)
+    def clearTbl(self,timestamp, tblName, include = True):
 
-        connection.close()
-        return
+        ret = True
+
+        try:
+            TimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+
+            connection = self.engine.connect()
+            if (include == True):
+                result = connection.execute("delete from " + tblName + "  where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "')")
+            else:
+                result = connection.execute("delete from " + tblName + "  where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')")
+        except BaseException as e:
+
+            print(e)
+
+            ret = False
+            print("ClearTbl Unexpected error:", e)
+
+        finally:
+            self.engine.connect().close()
+            return ret
 
     def emptyAllTbls(self):
 
         connection = self.engine.connect()
 
-        result = connection.execute("delete from lmpTbl")  
-        result = connection.execute("delete from loadTbl") 
-        result = connection.execute("delete from psInstLoadTbl") 
-        result = connection.execute("delete from psHrlyLoadTbl") 
-        result = connection.execute("delete from rtoHrlyLoadTbl") 
-        result = connection.execute("delete from genFuelTbl") 
-        result = connection.execute("delete from psMeteredLoad") 
-        #result = connection.execute("delete from meterTbl")
-        result = connection.execute("delete from pjmMeteredLoad")
+        #result = connection.execute("delete from lmpTbl")  
+        #result = connection.execute("delete from loadTbl") 
+        #result = connection.execute("delete from psInstLoadTbl") 
+        #result = connection.execute("delete from psHrlyLoadTbl") 
+        #result = connection.execute("delete from rtoHrlyLoadTbl") 
+        #result = connection.execute("delete from genFuelTbl") 
+        #result = connection.execute("delete from psMeteredLoad") 
+        ##result = connection.execute("delete from meterTbl")
+        #result = connection.execute("delete from pjmMeteredLoad")
         connection.close()
         return
 
@@ -168,7 +184,7 @@ class IsodataHelpers(object):
 
 
 
-    def get_current_hr_load(self, loadDf, Area, isoHelper):
+    def get_current_hr_load(self, loadDf, Area):
 
         df = None
         
@@ -191,18 +207,9 @@ class IsodataHelpers(object):
 
                 TimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
 
-                connection = self.engine.connect()
-
                 instLoadTblQuery = "SELECT timestamp, Area, Load FROM " + InstLoadTbl + " where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')"
                 
-
-                
-
                 loadDf = pd.read_sql(instLoadTblQuery,self.engine)
-                result = connection.execute("delete from " + HrlyTbl + "  where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')")
-
-                self.engine.connect().close()
-
                 loadDf.reset_index(drop=True,inplace=True)
                 loadDf.set_index('timestamp', inplace=True) 
             
@@ -210,12 +217,14 @@ class IsodataHelpers(object):
            
             hrlyDataDf.rename(columns={"Area": "NumReads",  "Load":"HrlyInstLoad"},inplace =True)
             hrlyDataDf.reset_index(inplace=True)
+            minTimeStamp = hrlyDataDf["timestamp"].min()
+            self.clearTbl(minTimeStamp,  HrlyTbl, True)
 
-            ret=isoHelper.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
+            ret=self.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
 
 
             if (ret==False):
-                print("could not save hrlyDataDf")
+                print("get_current_hr_load could not save hrlyDataDf")
 
         except BaseException as e:
             print(e)
@@ -252,11 +261,10 @@ class IsodataHelpers(object):
             else:
                 DataTbl = 'rtoForecastTbl'
                 HrlyTbl = 'rtoHrlyForecstTbl'
-             
-            connection = self.engine.connect()
-            TimeStr = oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
-            sql_query = "delete from " + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
-            result = connection.execute(sql_query)
+            
+            
+            self.clearTbl(oldestTimestamp, DataTbl)
+
 
             ret = self.saveDf(DataTbl, forecastDf)
             if (ret == False):
@@ -293,7 +301,7 @@ class IsodataHelpers(object):
 
 
             if (ret==False):
-                print("could not save hrlyDataDf")
+                print("saveForecastDf could not save hrlyDataDf")
 
         except BaseException as e:
             print(e)
@@ -403,10 +411,7 @@ class IsodataHelpers(object):
                       
             mergedDf.reset_index(inplace=True)
 
-            connection = self.engine.connect()
-
-            result = connection.execute("delete from PSEGLoadsTbl  where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "')")
-            self.engine.connect().close()
+            self.clearTbl(startTimeStamp, 'PSEGLoadsTbl')
 
             mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
             self.saveDf('PSEGLoadsTbl', mergedDf)
@@ -470,7 +475,8 @@ class IsodataHelpers(object):
 
             connection = self.engine.connect()
 
-            result = connection.execute("delete from RtoLoadsTbl  where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')")
+            self.clearTbl(startTimeStamp, 'RtoLoadsTbl' )
+
             mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
             self.saveDf('RtoLoadsTbl', mergedDf)
 

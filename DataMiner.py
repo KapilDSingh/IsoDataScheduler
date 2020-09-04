@@ -52,6 +52,11 @@ class DataMiner(object):
             lmpDf['timestamp'] = pd.to_datetime(lmpDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
             lmpDf['timestamp'] = pd.to_datetime(lmpDf['timestamp'])
             lmpDf = lmpDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
+
+            if (numRows > 1):
+                oldestTimestamp =lmpDf['timestamp'].min()
+                isoHelper.clearTbl(oldestTimestamp, 'lmpTbl')
+
             isoHelper.saveDf(DataTbl='lmpTbl', Data= lmpDf)
             i = 1
         except Exception as e:
@@ -65,6 +70,12 @@ class DataMiner(object):
     def fetch_InstantaneousLoad(self, numRows,  Area, isoHelper):
 
         try:
+
+            if (Area =='ps'):
+                DataTbl='psInstLoadTbl'
+            else:
+                DataTbl='loadTbl'
+
             r = self.http.request('GET', 'https://api.pjm.com/api/v1/inst_load?area=' + Area + '&rowCount=' + str(numRows) + '&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,area,instantaneous_load&format=JSON', headers=self.headers)
             
             jsonData = json.loads(r.data)
@@ -82,10 +93,11 @@ class DataMiner(object):
             loadDf['timestamp'] = pd.to_datetime(loadDf['timestamp'])
             loadDf = loadDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
 
-            if (Area =='ps'):
-                ret=isoHelper.saveDf(DataTbl='psInstLoadTbl', Data= loadDf)
-            else:
-                ret=isoHelper.saveDf(DataTbl='loadTbl', Data= loadDf)
+            if (numRows > 1):
+                oldestTimestamp =loadDf['timestamp'].min()
+                isoHelper.clearTbl(oldestTimestamp, DataTbl)
+
+            ret=isoHelper.saveDf(DataTbl, Data= loadDf)
 
             if ((numRows ==1) and  ret==True) :
 
@@ -99,7 +111,7 @@ class DataMiner(object):
 
 
             loadDf.set_index("timestamp", inplace = True)
-            hrlyLoadDf = isoHelper.get_current_hr_load(loadDf, Area,isoHelper)
+            hrlyLoadDf = isoHelper.get_current_hr_load(loadDf, Area)
 
         except Exception as e:
           print(e)
