@@ -213,7 +213,7 @@ class DataMiner(object):
                    forecastDf.reset_index( inplace=True)
 
                    isoHelper.saveForecastDf(oldestTimestamp, isPSEG, forecastDf= forecastDf, isShortTerm=True)
-                
+
                i = 1
 
         except Exception as e:

@@ -225,6 +225,13 @@ class IsodataHelpers(object):
 
             if (ret==False):
                 print("get_current_hr_load could not save hrlyDataDf")
+            else:
+                if (Area == 'ps'):
+                    self.mergePSEGHrlySeries( minTimeStamp)
+                else:
+                    self.mergeRTOHrlySeries( minTimeStamp)
+
+
 
         except BaseException as e:
             print(e)
@@ -302,6 +309,11 @@ class IsodataHelpers(object):
 
             if (ret==False):
                 print("saveForecastDf could not save hrlyDataDf")
+            else:
+                if (isPSEG ==True):
+                    self.mergePSEGHrlySeries( oldestTimestamp)
+                else:
+                    self.mergeRTOHrlySeries( oldestTimestamp)
 
         except BaseException as e:
             print(e)
@@ -494,6 +506,159 @@ class IsodataHelpers(object):
 
         return None
 
+    def mergePSEGHrlySeries(self, startTimeStamp):
 
+        try:
    
+            TimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+
+            psHrlyLoadTblQuery = "SELECT  [timestamp], [NumReads] as psNumReads, [HrlyInstLoad] FROM [ISODB].[dbo].[psHrlyLoadTbl]  where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "') order by timestamp "
+            dfPsHrlyLoad = pd.read_sql(psHrlyLoadTblQuery,self.engine)
+            dfPsHrlyLoad.reset_index(drop=True,inplace=True)
+            dfPsHrlyLoad.set_index('timestamp', inplace=True) 
+
+            meterHrlyQuery = "SELECT [MeterID], [timestamp], [NumReads] as meterNumReads, [HrlyWatts]\
+                    FROM [ISODB].[dbo].[HrlyMeterTbl] where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "') order by timestamp "
+            dfHrlyConsumptionLoad = pd.read_sql(meterHrlyQuery,self.engine)
+            dfHrlyConsumptionLoad.reset_index(drop=True,inplace=True)
+            dfHrlyConsumptionLoad.set_index('timestamp', inplace=True) 
+
+            psHrlyVeryShortForecastQuery = "SELECT [timestamp],[ForecstNumReads],[HrlyForecstLoad]\
+                                            FROM [ISODB].[dbo].[psHrlyForecstTbl] where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "') order by timestamp "
+            dfPsHrlyVeryShortForecast = pd.read_sql(psHrlyVeryShortForecastQuery,self.engine)
+            dfPsHrlyVeryShortForecast.reset_index(drop=True,inplace=True)
+            dfPsHrlyVeryShortForecast.set_index('timestamp', inplace=True) 
+
+
+            #psForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load Forecast]
+            #as ps7DayForecast, EvaluatedAt FROM forecast7dayTbl where
+            #timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
+            #dfPs7DayForecast= pd.read_sql(psForecast7dayTblQuery,self.engine)
+            #dfPs7DayForecast =
+            #dfPs7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
+            #del dfPs7DayForecast['EvaluatedAt']
+            #dfPs7DayForecast.reset_index(drop=True,inplace=True)
+            #dfPs7DayForecast.set_index('timestamp', inplace=True)
+
+            #rtoForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load
+            #Forecast] as rto7DayForecast, EvaluatedAt FROM rtoForecast7dayTbl
+            #where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
+            #dfRto7DayForecast=
+            #pd.read_sql(rtoForecast7dayTblQuery,self.engine)
+            #dfRto7DayForecast =
+            #dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
+            #del dfRto7DayForecast['EvaluatedAt']
+            #dfRto7DayForecast.reset_index(drop=True,inplace=True)
+            #dfRto7DayForecast.set_index('timestamp', inplace=True)
+
+
+            mergedDf = dfHrlyConsumptionLoad.join(dfPsHrlyLoad, how='outer')\
+                        .join(dfPsHrlyVeryShortForecast, how='outer')
+            
+            x=mergedDf['psNumReads'] + mergedDf['ForecstNumReads']
+            y=x[x ==12].index.tolist()
+            
+            if (len(y) > 0 and (len(mergedDf) < 10))  or max(mergedDf['psNumReads']) == 12:
+          
+                mergedDf.reset_index(inplace=True)
+
+                self.clearTbl(startTimeStamp, 'PSEGHrlyLoadsTbl')
+
+                mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
+
+                self.saveDf('PSEGHrlyLoadsTbl', mergedDf)
+
+        except BaseException as e:
+            print(e)
+            return None
+  
+        finally:
+            print("ps merged df",mergedDf)
+            #print(dfPsInstLoad)
+            #print(dfConsumptionLoad)
+            #print(dfPsVeryShortForecast)
+
+            #print(dfPs7DayForecast)
+
+            return mergedDf
+
+
+
+    def mergeRTOHrlySeries(self, startTimeStamp):
+
+        try:
+   
+            TimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+
+            rtoHrlyLoadTblQuery = "SELECT  [timestamp], [NumReads] as rtoNumReads, [HrlyInstLoad] FROM [ISODB].[dbo].[rtoHrlyLoadTbl]  where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "') order by timestamp "
+            dfRtoHrlyLoad = pd.read_sql(rtoHrlyLoadTblQuery,self.engine)
+            dfRtoHrlyLoad.reset_index(drop=True,inplace=True)
+            dfRtoHrlyLoad.set_index('timestamp', inplace=True) 
+
+            meterHrlyQuery = "SELECT  [MeterID], [timestamp], [NumReads] as meterNumReads, [HrlyWatts]\
+                    FROM [ISODB].[dbo].[HrlyMeterTbl] where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "') order by timestamp "
+            dfHrlyConsumptionLoad = pd.read_sql(meterHrlyQuery,self.engine)
+            dfHrlyConsumptionLoad.reset_index(drop=True,inplace=True)
+            dfHrlyConsumptionLoad.set_index('timestamp', inplace=True) 
+
+            rtoHrlyVeryShortForecastQuery = "SELECT [timestamp],[ForecstNumReads],[HrlyForecstLoad]\
+                                            FROM [ISODB].[dbo].[rtoHrlyForecstTbl] where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "') order by timestamp "
+            dfRtoHrlyVeryShortForecast = pd.read_sql(rtoHrlyVeryShortForecastQuery,self.engine)
+            dfRtoHrlyVeryShortForecast.reset_index(drop=True,inplace=True)
+            dfRtoHrlyVeryShortForecast.set_index('timestamp', inplace=True) 
+
+
+            #RtoForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load Forecast]
+            #as Rto7DayForecast, EvaluatedAt FROM forecast7dayTbl where
+            #timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
+            #dfRto7DayForecast= pd.read_sql(RtoForecast7dayTblQuery,self.engine)
+            #dfRto7DayForecast =
+            #dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
+            #del dfRto7DayForecast['EvaluatedAt']
+            #dfRto7DayForecast.reset_index(drop=True,inplace=True)
+            #dfRto7DayForecast.set_index('timestamp', inplace=True)
+
+            #rtoForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load
+            #Forecast] as rto7DayForecast, EvaluatedAt FROM rtoForecast7dayTbl
+            #where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
+            #dfRto7DayForecast=
+            #pd.read_sql(rtoForecast7dayTblQuery,self.engine)
+            #dfRto7DayForecast =
+            #dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
+            #del dfRto7DayForecast['EvaluatedAt']
+            #dfRto7DayForecast.reset_index(drop=True,inplace=True)
+            #dfRto7DayForecast.set_index('timestamp', inplace=True)
+
+
+            mergedDf = dfHrlyConsumptionLoad.join(dfRtoHrlyLoad, how='outer')\
+                        .join(dfRtoHrlyVeryShortForecast, how='outer')
+
+            x=mergedDf['rtoNumReads'] + mergedDf['ForecstNumReads']
+            y=x[x ==12].index.tolist()
+            
+            if (len(y) > 0 and (len(mergedDf) < 10))  or max(mergedDf['rtoNumReads']) == 12:
+
+                mergedDf.reset_index(inplace=True)
+
+                self.clearTbl(startTimeStamp, 'RTOHrlyLoadsTbl')
+
+                mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last') 
+                self.saveDf('RTOHrlyLoadsTbl', mergedDf)
+
+
+        except BaseException as e:
+            print(e)
+            return None
+  
+        finally:
+
+            #print(mergedDf)
+            #print(dfRtoInstLoad)
+            #print(dfConsumptionLoad)
+            #print(dfRtoVeryShortForecast)
+
+            #print(dfRto7DayForecast)
+
+            return None
+
 
