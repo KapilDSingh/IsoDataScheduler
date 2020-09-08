@@ -517,7 +517,7 @@ class IsodataHelpers(object):
             dfPsHrlyLoad.reset_index(drop=True,inplace=True)
             dfPsHrlyLoad.set_index('timestamp', inplace=True) 
 
-            meterHrlyQuery = "SELECT [MeterID], [timestamp], [NumReads] as meterNumReads, [HrlyWatts]\
+            meterHrlyQuery = "SELECT  [timestamp], [NumReads] as meterNumReads, [HrlyWatts]\
                     FROM [ISODB].[dbo].[HrlyMeterTbl] where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "') order by timestamp "
             dfHrlyConsumptionLoad = pd.read_sql(meterHrlyQuery,self.engine)
             dfHrlyConsumptionLoad.reset_index(drop=True,inplace=True)
@@ -595,7 +595,7 @@ class IsodataHelpers(object):
             dfRtoHrlyLoad.reset_index(drop=True,inplace=True)
             dfRtoHrlyLoad.set_index('timestamp', inplace=True) 
 
-            meterHrlyQuery = "SELECT  [MeterID], [timestamp], [NumReads] as meterNumReads, [HrlyWatts]\
+            meterHrlyQuery = "SELECT [timestamp], [NumReads] as meterNumReads, [HrlyWatts]\
                     FROM [ISODB].[dbo].[HrlyMeterTbl] where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "') order by timestamp "
             dfHrlyConsumptionLoad = pd.read_sql(meterHrlyQuery,self.engine)
             dfHrlyConsumptionLoad.reset_index(drop=True,inplace=True)
