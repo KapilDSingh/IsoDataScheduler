@@ -52,6 +52,9 @@ class MeterData(object):
             meterDf = meterDf.astype({'RMS_Watts_Tot': float,  'RMS_Volts_Ln_1': float,  'RMS_Volts_Ln_2': float,  'RMS_Volts_Ln_3': float,  
            'Power_Factor_Ln_1': float, 'Power_Factor_Ln_2': float, 'Power_Factor_Ln_3': float})
 
+            oldestTimestamp =meterDf['timestamp'].min()
+            isoHelper.clearTbl(oldestTimestamp, 'meterTbl')
+
             isoHelper.saveDf(DataTbl='meterTbl', Data= meterDf);
 
             meterDf.set_index("timestamp", inplace = True)
