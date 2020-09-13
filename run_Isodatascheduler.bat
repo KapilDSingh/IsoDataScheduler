@@ -1,0 +1,1 @@
+c:\isodatascheduler\env2\scripts\python.exe c:\isodatascheduler\isodatascheduler.py

@@ -44,6 +44,7 @@
   <ItemGroup>
     <Content Include="CumulativeDist.txt" />
     <Content Include="requirements.txt" />
+    <Content Include="run_Isodatascheduler.bat" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env2\">
