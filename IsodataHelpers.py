@@ -259,6 +259,73 @@ class IsodataHelpers(object):
 
         return df
 
+
+    def savePrevHrForecastDf(self,oldestTimestamp, isAllData, isPSEG, isShortTerm=True):
+        
+        try:
+            if (isPSEG ==True):
+                DataTbl = 'forecastTbl'
+                HrlyTbl = 'psHrlyForecstTbl'
+            else:
+                DataTbl = 'rtoForecastTbl'
+                HrlyTbl = 'rtoHrlyForecstTbl'
+             
+            forecstLoadTblQuery = None;
+            hrlyDataDf = None
+
+            if (isAllData == True):
+                self.clearTbl(oldestTimestamp, HrlyTbl)
+                forecstLoadTblQuery = "SELECT timestamp, Area, LoadForecast FROM " + DataTbl 
+            else:
+                timestamp = pd.to_datetime(oldestTimestamp)
+
+                timestamp = timestamp.replace(minute=0, second = 0, microsecond =0)
+                
+                if (timestamp == oldestTimestamp):
+                    timestamp -= timedelta(hours=1)                
+
+                    StartTimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+                    EndTimeStr =  oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
+
+
+                    forecstLoadTblQuery = "SELECT timestamp, Area, LoadForecast FROM " + DataTbl + \
+                    " where timestamp  > CONVERT(DATETIME,'" + StartTimeStr + "') and " \
+                    "timestamp  <= CONVERT(DATETIME,'" + EndTimeStr + "')  "
+                    result = connection.execute("delete from " + HrlyTbl + "  where timestamp  > CONVERT(DATETIME,'" + StartTimeStr + "')")
+
+
+            if (forecstLoadTblQuery !=None):
+                connection = self.engine.connect()
+
+                forecstLoadDf = pd.read_sql(forecstLoadTblQuery,self.engine)
+
+                self.engine.connect().close()
+
+                forecstLoadDf.reset_index(drop=True,inplace=True)
+                forecstLoadDf.set_index('timestamp', inplace=True) 
+            
+                hrlyDataDf = forecstLoadDf.resample('H',label='right', closed='right').agg({"Area":'size',"LoadForecast":'sum'})
+           
+                hrlyDataDf.rename(columns={"Area": "ForecstNumReads",  "LoadForecast":"HrlyForecstLoad"},inplace =True)
+                hrlyDataDf.reset_index(inplace=True)
+
+                ret=self.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
+
+
+                if (ret==False):
+                    print("savePrevHrForecastDf could not save hrlyDataDf")
+
+                print(hrlyDataDf)
+
+        except BaseException as e:
+            print(e)
+  
+        finally:
+            self.engine.connect().close()
+
+            return hrlyDataDf
+
+
     def saveForecastDf(self,oldestTimestamp, isPSEG, forecastDf, isShortTerm=True):
         
         try:
@@ -277,13 +344,9 @@ class IsodataHelpers(object):
             if (ret == False):
                 print ("save instant ForecastDf failed")
 
-            
+            self.savePrevHrForecastDf(oldestTimestamp, False, isPSEG, True)
             timestamp = pd.to_datetime(oldestTimestamp)
 
-            #timestamp = timestamp.replace(minute=0, second = 0, microsecond =0)
-                
-            #if (timestamp == pd.to_datetime(oldestTimestamp)):
-            #    timestamp -= timedelta(hours=1)                
 
             TimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -292,7 +355,7 @@ class IsodataHelpers(object):
             forecstLoadTblQuery = "SELECT timestamp, Area, LoadForecast FROM " + DataTbl + " where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')"
 
             forecstLoadDf = pd.read_sql(forecstLoadTblQuery,self.engine)
-            result = connection.execute("delete from " + HrlyTbl ) #+ "  where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')")
+            result = connection.execute("delete from " + HrlyTbl + "  where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')")
 
             self.engine.connect().close()
 
@@ -573,7 +636,7 @@ class IsodataHelpers(object):
             return None
   
         finally:
-            print("ps merged df",mergedDf)
+            print("hrly merged df",mergedDf)
             #print(dfPsInstLoad)
             #print(dfConsumptionLoad)
             #print(dfPsVeryShortForecast)

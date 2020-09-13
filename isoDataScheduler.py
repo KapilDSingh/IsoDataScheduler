@@ -30,17 +30,12 @@ def main():
         dataMiner.fetch_LoadForecast(True, isoHelper,GCPShave)
         #dataMiner.fetch_7dayLoadForecast(False, isoHelper)
         dataMiner.fetch_LoadForecast(False, isoHelper,GCPShave)
-        #startDateTime = pd.datetime(2019,7,1)
-        #isoHelper.mergePSEGTimeSeries(startDateTime)
-        #isoHelper.mergeRTOTimeSeries(startDateTime)
 
         df = isoHelper.getLmp_latest(nodeId='PSEG',numIntervals=6)
 
       
         print(df)
    
-
-        
         return
    
     dataMiner = DataMiner()
@@ -56,11 +51,11 @@ def main():
     startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
     endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
    
-    dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
-    dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
+    #dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
+    #dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
 
-    #meterData.genHist('9214411', isoHelper)
-    dataMiner.genPSEGLoadHist(isoHelper)
+    ##meterData.genHist('9214411', isoHelper)
+    #dataMiner.genPSEGLoadHist(isoHelper)
     dataMiner.genRTOLoadHist(isoHelper)
    
     #rng.strftime('%B %d, %Y, %r')
