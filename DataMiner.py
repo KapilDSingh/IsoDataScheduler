@@ -196,16 +196,11 @@ class DataMiner(object):
                forecastDf = forecastDf.sort_values('timestamp',ascending=False)
 
                newestTimestamp =forecastDf['timestamp'].max()
-               #newestEvaluateAt = forecastDf['EvaluatedAt'].max()
 
                oldestTimestamp =forecastDf['timestamp'].min()
-               #oldestEvaluateAt = forecastDf['EvaluatedAt'].min()
+
                forecastDf = forecastDf.sort_values('timestamp').drop_duplicates(['timestamp'],keep='last')
                dfTimeStamp = isoHelper.get_latest_Forecast(isPSEG,isShortTerm=True)
-
-               forecastDf = forecastDf.set_index('timestamp')
-
-               forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
               
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
                    forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
@@ -217,7 +212,7 @@ class DataMiner(object):
                i = 1
 
         except Exception as e:
-               print(e)
+               print("fetch_LoadForecast",e)
         finally:
                 return
 

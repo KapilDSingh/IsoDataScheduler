@@ -272,6 +272,7 @@ class IsodataHelpers(object):
              
             forecstLoadTblQuery = None;
             hrlyDataDf = None
+            connection = self.engine.connect()
 
             if (isAllData == True):
                 self.clearTbl(oldestTimestamp, HrlyTbl)
@@ -280,7 +281,7 @@ class IsodataHelpers(object):
                 timestamp = pd.to_datetime(oldestTimestamp)
 
                 timestamp = timestamp.replace(minute=0, second = 0, microsecond =0)
-                
+               
                 if (timestamp == oldestTimestamp):
                     timestamp -= timedelta(hours=1)                
 
@@ -295,7 +296,6 @@ class IsodataHelpers(object):
 
 
             if (forecstLoadTblQuery !=None):
-                connection = self.engine.connect()
 
                 forecstLoadDf = pd.read_sql(forecstLoadTblQuery,self.engine)
 
@@ -345,8 +345,8 @@ class IsodataHelpers(object):
                 print ("save instant ForecastDf failed")
 
             self.savePrevHrForecastDf(oldestTimestamp, False, isPSEG, True)
-            timestamp = pd.to_datetime(oldestTimestamp)
 
+            timestamp = pd.to_datetime(oldestTimestamp)
 
             TimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -355,6 +355,7 @@ class IsodataHelpers(object):
             forecstLoadTblQuery = "SELECT timestamp, Area, LoadForecast FROM " + DataTbl + " where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')"
 
             forecstLoadDf = pd.read_sql(forecstLoadTblQuery,self.engine)
+
             result = connection.execute("delete from " + HrlyTbl + "  where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')")
 
             self.engine.connect().close()
