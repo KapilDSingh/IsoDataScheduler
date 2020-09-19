@@ -42,7 +42,7 @@ class IsodataHelpers(object):
 
         except BaseException as e:
 
-          print(e)
+          print("Save DF Unexpected error",e)
 
           print("Save DF Unexpected error:", e)
 
@@ -64,7 +64,7 @@ class IsodataHelpers(object):
                 result = connection.execute("delete from " + tblName + "  where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')")
         except BaseException as e:
 
-            print(e)
+            print("ClearTbl Unexpected error:",e)
 
             ret = False
             print("ClearTbl Unexpected error:", e)
@@ -106,7 +106,7 @@ class IsodataHelpers(object):
 
 
         except BaseException as e:
-          print(e)
+          print("Get LMP", e)
   
         finally:
             self.engine.connect().close()
@@ -175,7 +175,7 @@ class IsodataHelpers(object):
             df = pd.read_sql_query(sql_query, self.engine) 
  
         except BaseException as e:
-            print(e)
+            print("get_latest_Forecast",e)
   
         finally:
             self.engine.connect().close()
@@ -234,12 +234,12 @@ class IsodataHelpers(object):
 
 
         except BaseException as e:
-            print(e)
+            print("get_current_hr_load",e)
   
         finally:
             self.engine.connect().close()
 
-            print(hrlyDataDf)
+
             return hrlyDataDf
 
 
@@ -309,16 +309,16 @@ class IsodataHelpers(object):
                 hrlyDataDf.rename(columns={"Area": "ForecstNumReads",  "LoadForecast":"HrlyForecstLoad"},inplace =True)
                 hrlyDataDf.reset_index(inplace=True)
 
+                
                 ret=self.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
 
 
                 if (ret==False):
                     print("savePrevHrForecastDf could not save hrlyDataDf")
 
-                print(hrlyDataDf)
 
         except BaseException as e:
-            print(e)
+            print("savePrevHrForecastDf",e)
   
         finally:
             self.engine.connect().close()
@@ -326,7 +326,7 @@ class IsodataHelpers(object):
             return hrlyDataDf
 
 
-    def saveForecastDf(self,oldestTimestamp, isPSEG, forecastDf, isShortTerm=True):
+    def saveForecastDf(self,oldestTimestamp, GCPShave, isPSEG, forecastDf, isShortTerm=True ):
         
         try:
             if (isPSEG ==True):
@@ -367,8 +367,10 @@ class IsodataHelpers(object):
            
             hrlyDataDf.rename(columns={"Area": "ForecstNumReads",  "LoadForecast":"HrlyForecstLoad"},inplace =True)
             hrlyDataDf.reset_index(inplace=True)
-
+            
             ret=self.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
+
+            PeakhrlyDataDf = GCPShave.findAllPeaks(oldestTimestamp, isPSEG, self)
 
 
             if (ret==False):
@@ -380,12 +382,11 @@ class IsodataHelpers(object):
                     self.mergeRTOHrlySeries( oldestTimestamp)
 
         except BaseException as e:
-            print(e)
+            print("saveForecastDf",e)
   
         finally:
             self.engine.connect().close()
 
-            print(hrlyDataDf)
             return hrlyDataDf
 
 
@@ -405,7 +406,7 @@ class IsodataHelpers(object):
             df = pd.read_sql_query(sql_query, self.engine) 
  
         except BaseException as e:
-          print(e)
+          print("getPSEGLoad",e)
   
         finally:
             self.engine.connect().close()
@@ -428,7 +429,7 @@ class IsodataHelpers(object):
             df = pd.read_sql_query(sql_query, self.engine) 
  
         except BaseException as e:
-          print(e)
+          print("getRTOLoad",e)
   
         finally:
             self.engine.connect().close()
@@ -452,7 +453,7 @@ class IsodataHelpers(object):
             dfConsumptionLoad.reset_index(drop=True,inplace=True)
             dfConsumptionLoad.set_index('timestamp', inplace=True) 
 
-            psVeryShortForecastQuery = "SELECT timestamp, LoadForecast as [psVeryShortForecast], EvaluatedAt FROM  forecastTbl where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "')"
+            psVeryShortForecastQuery = "SELECT timestamp, LoadForecast as [psVeryShortForecast], EvaluatedAt, Peak FROM  forecastTbl where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "')"
             dfPsVeryShortForecast = pd.read_sql(psVeryShortForecastQuery,self.engine)
             dfPsVeryShortForecast = dfPsVeryShortForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
             #del dfPsVeryShortForecast['EvaluatedAt']
@@ -493,7 +494,7 @@ class IsodataHelpers(object):
             self.saveDf('PSEGLoadsTbl', mergedDf)
 
         except BaseException as e:
-            print(e)
+            print("mergePSEGTimeSeries",e)
             return None
   
         finally:
@@ -524,7 +525,7 @@ class IsodataHelpers(object):
             dfConsumptionLoad.set_index('timestamp', inplace=True) 
 
 
-            rtoVeryShortForecastQuery = "SELECT timestamp, LoadForecast as [rtoVeryShortForecast], EvaluatedAt FROM  rtoForecastTbl where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
+            rtoVeryShortForecastQuery = "SELECT timestamp, LoadForecast as [rtoVeryShortForecast], EvaluatedAt, Peak  FROM  rtoForecastTbl where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
             dfRtoVeryShortForecast = pd.read_sql(rtoVeryShortForecastQuery,self.engine)
             dfRtoVeryShortForecast = dfRtoVeryShortForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
             dfRtoVeryShortForecast['EvaluatedAt']
@@ -557,7 +558,7 @@ class IsodataHelpers(object):
             self.saveDf('RtoLoadsTbl', mergedDf)
 
         except BaseException as e:
-            print(e)
+            print("mergeRTOTimeSeries",e)
             return None
   
         finally:
@@ -587,7 +588,7 @@ class IsodataHelpers(object):
             dfHrlyConsumptionLoad.reset_index(drop=True,inplace=True)
             dfHrlyConsumptionLoad.set_index('timestamp', inplace=True) 
 
-            psHrlyVeryShortForecastQuery = "SELECT [timestamp],[ForecstNumReads],[HrlyForecstLoad]\
+            psHrlyVeryShortForecastQuery = "SELECT [timestamp],[ForecstNumReads],[HrlyForecstLoad], Peak\
                                             FROM [ISODB].[dbo].[psHrlyForecstTbl] where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "') order by timestamp "
             dfPsHrlyVeryShortForecast = pd.read_sql(psHrlyVeryShortForecastQuery,self.engine)
             dfPsHrlyVeryShortForecast.reset_index(drop=True,inplace=True)
@@ -637,7 +638,7 @@ class IsodataHelpers(object):
             return None
   
         finally:
-            print("hrly merged df",mergedDf)
+            #print("hrly merged df",mergedDf)
             #print(dfPsInstLoad)
             #print(dfConsumptionLoad)
             #print(dfPsVeryShortForecast)
@@ -665,7 +666,7 @@ class IsodataHelpers(object):
             dfHrlyConsumptionLoad.reset_index(drop=True,inplace=True)
             dfHrlyConsumptionLoad.set_index('timestamp', inplace=True) 
 
-            rtoHrlyVeryShortForecastQuery = "SELECT [timestamp],[ForecstNumReads],[HrlyForecstLoad]\
+            rtoHrlyVeryShortForecastQuery = "SELECT [timestamp],[ForecstNumReads],[HrlyForecstLoad], Peak\
                                             FROM [ISODB].[dbo].[rtoHrlyForecstTbl] where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "') order by timestamp "
             dfRtoHrlyVeryShortForecast = pd.read_sql(rtoHrlyVeryShortForecastQuery,self.engine)
             dfRtoHrlyVeryShortForecast.reset_index(drop=True,inplace=True)
@@ -711,7 +712,7 @@ class IsodataHelpers(object):
 
 
         except BaseException as e:
-            print(e)
+            print("mergeRTOHrlySeries",e)
             return None
   
         finally:

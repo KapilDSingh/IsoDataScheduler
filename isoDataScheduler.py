@@ -49,9 +49,9 @@ def main():
     #GCPShave.findAllPeaks(False, isoHelper)
     #GCPShave.findAllHrlyPeaks(True, isoHelper)
     #GCPShave.findAllHrlyPeaks(False, isoHelper)
+    #return
 
-
-    #meterData.fetchMeterData('550001081', 1000, isoHelper)
+    meterData.fetchMeterData('550001081', 1000, isoHelper)
     #currentDate =datetime.today();
     #eastern = timezone('US/Eastern')
     #startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
@@ -68,9 +68,9 @@ def main():
     i=1
    
 
-    #dataMiner.fetch_LMP(8640, isoHelper)
-    #dataMiner.fetch_InstantaneousLoad(8640, 'ps',isoHelper)
-    #dataMiner.fetch_InstantaneousLoad(8640, 'PJM RTO',isoHelper)
+    dataMiner.fetch_LMP(8640, isoHelper)
+    dataMiner.fetch_InstantaneousLoad(8640, 'ps',isoHelper)
+    dataMiner.fetch_InstantaneousLoad(8640, 'PJM RTO',isoHelper)
 
     dataMiner.fetch_GenFuel(528, isoHelper)
 
@@ -79,7 +79,7 @@ def main():
     dataMiner.fetch_LoadForecast(False, isoHelper, GCPShave)
     #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
 
-    startDateTime = pd.datetime(2020,1,1)
+    startDateTime = pd.datetime(2020,7,1)
     isoHelper.mergePSEGTimeSeries(startDateTime)
     isoHelper.mergeRTOTimeSeries(startDateTime)
 

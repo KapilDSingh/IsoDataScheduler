@@ -3,6 +3,7 @@ import pandas as pd
 plt.style.use('seaborn-poster')
 import scipy.signal
 from pandas.plotting import register_matplotlib_converters
+from datetime import datetime, timedelta
 
 class GridCPShaving(object):
     """description of class"""
@@ -43,14 +44,15 @@ class GridCPShaving(object):
             #plt.ylabel('Load Forecast (MW)')
             ##plt.legend(loc = 4)
             #plt.show()
+            forecastDF.reset_index(inplace=True)
         except Exception as e:
-            print(e)
+            print("peakSignal",e)
         finally:
            
             return forecastDF
 
 
-    def findAllPeaks(self, isPSEG, isoHelper):
+    def findAllPeaks(self, CurrentTime, isPSEG, isoHelper):
 
         if (isPSEG):
             DataTbl = "forecastTbl"
@@ -59,12 +61,15 @@ class GridCPShaving(object):
 
          
         try:
+            CurrentTime -= timedelta(hours=3) 
+            StartTimeStr = CurrentTime.strftime("%Y-%m-%dT%H:%M:%S")
             sql_query = "SELECT [timestamp] \
                         ,[EvaluatedAt]\
                         ,[Area] \
                         ,[LoadForecast] \
                         ,[Peak] \
-                        FROM [ISODB].[dbo]." + DataTbl + " order by timestamp"
+                        FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= '" + StartTimeStr +\
+                             "' order by timestamp"
 
             forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
             forecastDf.reset_index(drop=True,inplace=True)
@@ -74,15 +79,15 @@ class GridCPShaving(object):
 
             connection = isoHelper.engine.connect()
 
-            result = connection.execute("delete from " + DataTbl)
+            result = connection.execute("delete from " + DataTbl   + " where timestamp >= CONVERT(DATETIME,'" + StartTimeStr + "')")
             isoHelper.engine.connect().close()
 
-            forecastDf.reset_index(inplace=True)
+            
             forecastDf = forecastDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
             ret=isoHelper.saveDf(DataTbl, Data= forecastDf)
  
         except BaseException as e:
-            print(e)
+            print("findAllPeaks",e)
         finally:
             return forecastDf
 
@@ -124,28 +129,33 @@ class GridCPShaving(object):
             #plt.ylabel('Load Forecast (MW)')
             ##plt.legend(loc = 4)
             #plt.show()
+
+            forecastDF.reset_index(inplace=True)
         except Exception as e:
-            print(e)
+            print("peakHrlySignal",e)
         finally:
            
             return forecastDF
 
 
 
-    def findAllHrlyPeaks(self, isPSEG, isoHelper):
+    def findAllHrlyPeaks(self, CurrentTime, isPSEG, isoHelper):
 
         if (isPSEG):
             DataTbl = "psHrlyForecstTbl"
         else:
             DataTbl = "rtoHrlyForecstTbl"
 
-         
         try:
+            CurrentTime -= timedelta(hours=3) 
+            StartTimeStr = CurrentTime.strftime("%Y-%m-%dT%H:%M:%S")
+
             sql_query = "SELECT  [timestamp] \
                         ,[ForecstNumReads]\
                         ,[HrlyForecstLoad]\
                         ,[Peak]\
-                        FROM [ISODB].[dbo]." + DataTbl + " order by timestamp"
+                        FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + StartTimeStr + "')" +\
+                           " order by timestamp"
 
             forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
             forecastDf.reset_index(drop=True,inplace=True)
@@ -155,15 +165,15 @@ class GridCPShaving(object):
 
             connection = isoHelper.engine.connect()
 
-            result = connection.execute("delete from " + DataTbl)
+            result = connection.execute("delete from " + DataTbl  + " where timestamp >= CONVERT(DATETIME,'" + StartTimeStr + "')")
             isoHelper.engine.connect().close()
 
-            forecastDf.reset_index(inplace=True)
+
             forecastDf = forecastDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
             ret=isoHelper.saveDf(DataTbl, Data= forecastDf)
  
         except BaseException as e:
-            print(e)
+            print("findAllHrlyPeaks",e)
         finally:
             return forecastDf
 

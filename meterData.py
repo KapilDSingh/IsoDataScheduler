@@ -191,5 +191,3 @@ class MeterData(object):
         finally:
             isoHelper.engine.connect().close()
 
-            print(hrlyDataDf)
-            return hrlyDataDf

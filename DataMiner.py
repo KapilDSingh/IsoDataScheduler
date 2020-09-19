@@ -60,8 +60,8 @@ class DataMiner(object):
             isoHelper.saveDf(DataTbl='lmpTbl', Data= lmpDf)
             i = 1
         except Exception as e:
-          print(e)
-          print("Fetch LMP Unexpected error:", sys.exc_info()[0])
+          print("Fetch LMP Unexpected error:",e)
+
         finally:
             return
 
@@ -114,7 +114,7 @@ class DataMiner(object):
             hrlyLoadDf = isoHelper.get_current_hr_load(loadDf, Area)
 
         except Exception as e:
-          print(e)
+  
           print("Fetch Instantaneous Load Unexpected error:", e)
         finally:
             return
@@ -143,7 +143,7 @@ class DataMiner(object):
             isoHelper.saveDf(DataTbl='genFuelTbl', Data= genFuelDf)
             i = 1
         except Exception as e:
-          print(e)
+         
           print("Fetch GenFuel Unexpected error:", e)
         finally:
             return
@@ -201,13 +201,15 @@ class DataMiner(object):
 
                forecastDf = forecastDf.sort_values('timestamp').drop_duplicates(['timestamp'],keep='last')
                dfTimeStamp = isoHelper.get_latest_Forecast(isPSEG,isShortTerm=True)
-              
+               
+               forecastDf.reset_index(drop=True,inplace=True)
+
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
                    forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
 
-                   forecastDf.reset_index( inplace=True)
+                   forecastDf.reset_index(drop=True,  inplace=True)
 
-                   isoHelper.saveForecastDf(oldestTimestamp, isPSEG, forecastDf= forecastDf, isShortTerm=True)
+                   isoHelper.saveForecastDf(oldestTimestamp, GCPShave, isPSEG, forecastDf= forecastDf, isShortTerm=True)
 
                i = 1
 
@@ -264,11 +266,11 @@ class DataMiner(object):
         
 
                    if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
-                       print (forecastDf)
-                   if (isPSEG == True):
-                       isoHelper.saveForecastDf(oldestTimestamp, isPSEG, forecastDf= forecastDf, isShortTerm=False)
-                   else:
-                       isoHelper.saveForecastDf(oldestTimestamp, isPSEG, forecastDf= forecastDf, isShortTerm=False)
+
+                       if (isPSEG == True):
+                           isoHelper.saveForecastDf(oldestTimestamp, GCPShave, isPSEG, forecastDf= forecastDf, isShortTerm=False)
+                       else:
+                           isoHelper.saveForecastDf(oldestTimestamp, GCPShave, isPSEG, forecastDf= forecastDf, isShortTerm=False)
 
                    i = 1
 
