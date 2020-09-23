@@ -5,7 +5,7 @@ from distutils import sys
 from sys import path
 import pandas as pd
 from pandas.io import sql
-import schedule
+
 import time
 from DataMiner import DataMiner
 from IsodataHelpers import IsodataHelpers

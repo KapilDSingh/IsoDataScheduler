@@ -213,7 +213,7 @@ class IsodataHelpers(object):
                 loadDf.reset_index(drop=True,inplace=True)
                 loadDf.set_index('timestamp', inplace=True) 
             
-            hrlyDataDf = loadDf.resample('H',label='right', closed='right').agg({"Area":'size',"Load":'sum'})
+            hrlyDataDf = loadDf.resample('H',label='left', closed='right').agg({"Area":'size',"Load":'sum'})
            
             hrlyDataDf.rename(columns={"Area": "NumReads",  "Load":"HrlyInstLoad"},inplace =True)
             hrlyDataDf.reset_index(inplace=True)
@@ -304,7 +304,7 @@ class IsodataHelpers(object):
                 forecstLoadDf.reset_index(drop=True,inplace=True)
                 forecstLoadDf.set_index('timestamp', inplace=True) 
             
-                hrlyDataDf = forecstLoadDf.resample('H',label='right', closed='right').agg({"Area":'size',"LoadForecast":'sum'})
+                hrlyDataDf = forecstLoadDf.resample('H',label='left', closed='right').agg({"Area":'size',"LoadForecast":'sum'})
            
                 hrlyDataDf.rename(columns={"Area": "ForecstNumReads",  "LoadForecast":"HrlyForecstLoad"},inplace =True)
                 hrlyDataDf.reset_index(inplace=True)
@@ -363,7 +363,7 @@ class IsodataHelpers(object):
             forecstLoadDf.reset_index(drop=True,inplace=True)
             forecstLoadDf.set_index('timestamp', inplace=True) 
             
-            hrlyDataDf = forecstLoadDf.resample('H',label='right', closed='right').agg({"Area":'size',"LoadForecast":'sum'})
+            hrlyDataDf = forecstLoadDf.resample('H',label='left', closed='right').agg({"Area":'size',"LoadForecast":'sum'})
            
             hrlyDataDf.rename(columns={"Area": "ForecstNumReads",  "LoadForecast":"HrlyForecstLoad"},inplace =True)
             hrlyDataDf.reset_index(inplace=True)
