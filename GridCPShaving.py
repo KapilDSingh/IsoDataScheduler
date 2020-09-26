@@ -98,7 +98,7 @@ class GridCPShaving(object):
             register_matplotlib_converters()
             
             if (isPSEG):
-                maxLoadHeight = 7500
+                maxLoadHeight = 5000
                 minLoadHeight = -5000
             else:
                 maxLoadHeight = 115000
