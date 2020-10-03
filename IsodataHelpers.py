@@ -40,8 +40,6 @@ class IsodataHelpers(object):
 
         except BaseException as e:
 
-          print("Save DF Unexpected error",e)
-
           print("Save DF Unexpected error:", e)
 
         finally:
@@ -365,6 +363,9 @@ class IsodataHelpers(object):
             if (ret == False):
                 print("saveForecastDf could not save hrlyDataDf")
             else:
+                GCPShave.findPeaks(isPSEG, False, True, self)
+                GCPShave.findPeaks(isPSEG, True, True, self)
+
                 if (isPSEG == True):
                     self.mergePSEGHrlySeries(oldestTimestamp)
                 else:

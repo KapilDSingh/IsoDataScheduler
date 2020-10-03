@@ -45,11 +45,10 @@ def main():
 
     isoHelper.emptyAllTbls()
 
-    #GCPShave.findAllPeaks(True, isoHelper)
-    #GCPShave.findAllPeaks(False, isoHelper)
-    #GCPShave.findAllHrlyPeaks(True, isoHelper)
-    #GCPShave.findAllHrlyPeaks(False, isoHelper)
-    #return
+    #GCPShave.findPeaks(True, False, True, isoHelper)
+    #GCPShave.findPeaks(True, True, True, isoHelper)
+    #GCPShave.findPeaks(False, False, True, isoHelper)
+    #GCPShave.findPeaks(False, True, True, isoHelper)
 
     meterData.fetchMeterData('550001081', 1000, isoHelper)
     #currentDate =datetime.today();
