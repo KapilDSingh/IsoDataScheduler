@@ -33,7 +33,7 @@ class GridCPShaving(object):
             if (len(peaks_negative)>0):
                 forecastDF.loc[peaks_negative, 'Peak'] = -1
 
-            forecastDF.set_index('timestamp', inplace=True) 
+            #forecastDF.set_index('timestamp', inplace=True) 
             #plt.figure(figsize = (140, 80))
             #plt.plot_date(forecastDF.index, forecastDF.LoadForecast, linewidth = 2)
 
@@ -44,7 +44,7 @@ class GridCPShaving(object):
             #plt.ylabel('Load Forecast (MW)')
             ##plt.legend(loc = 4)
             #plt.show()
-            forecastDF.reset_index(inplace=True)
+            #forecastDF.reset_index(inplace=True)
         except Exception as e:
             print("peakSignal",e)
         finally:
@@ -118,8 +118,8 @@ class GridCPShaving(object):
             if (len(peaks_negative)>0):
                 forecastDF.loc[peaks_negative, 'Peak'] = -1
 
-            forecastDF.set_index('timestamp', inplace=True) 
-            #plt.figure(figsize = (140, 80))
+            #forecastDF.set_index('timestamp', inplace=True) 
+            ##plt.figure(figsize = (80, 80))
             #plt.plot_date(forecastDF.index, forecastDF.HrlyForecstLoad  / forecastDF.ForecstNumReads, linewidth = 2)
 
             #plt.plot_date(forecastDF.index[peaks_positive], forecastDF.HrlyForecstLoad[peaks_positive] / forecastDF.ForecstNumReads[peaks_positive], 'ro', label = 'positive peaks')
@@ -130,7 +130,7 @@ class GridCPShaving(object):
             ##plt.legend(loc = 4)
             #plt.show()
 
-            forecastDF.reset_index(inplace=True)
+            #forecastDF.reset_index(inplace=True)
         except Exception as e:
             print("peakHrlySignal",e)
         finally:
@@ -139,38 +139,43 @@ class GridCPShaving(object):
 
 
 
-    def findAllHrlyPeaks(self, CurrentTime, isPSEG, isoHelper):
+    def findAllHrlyPeaks(self, isPSEG, isoHelper):
 
         if (isPSEG):
             DataTbl = "psHrlyForecstTbl"
         else:
             DataTbl = "rtoHrlyForecstTbl"
 
+        forecastDf = None
         try:
-            CurrentTime -= timedelta(hours=3) 
-            StartTimeStr = CurrentTime.strftime("%Y-%m-%dT%H:%M:%S")
+            startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(isPSEG, True)
+            periodTimeStamp = startTimeStamp
 
-            sql_query = "SELECT  [timestamp] \
+            while (periodTimeStamp < endTimeStamp):
+                periodTimeStamp = periodTimeStamp + timedelta(hours = 24)
+
+                if (periodTimeStamp > endTimeStamp):
+                    periodTimeStamp = endTimeStamp
+            
+                startTimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+                endTimeStr = periodTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+
+                sql_query = "SELECT  [timestamp] \
                         ,[ForecstNumReads]\
                         ,[HrlyForecstLoad]\
                         ,[Peak]\
-                        FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + StartTimeStr + "')" +\
+                        FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') and timestamp < CONVERT(DATETIME,'" + endTimeStr + "')" +\
                            " order by timestamp"
 
-            forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
-            forecastDf.reset_index(drop=True,inplace=True)
+                forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
+                forecastDf.reset_index(drop =True, inplace=True)
+
+                print(forecastDf)
             
-            
-            forecastDf = self.peakHrlySignal(forecastDf, isPSEG)
+                forecastDf = self.peakHrlySignal(forecastDf, isPSEG)
+                isoHelper.replaceDf(DataTbl, forecastDf)
 
-            connection = isoHelper.engine.connect()
-
-            result = connection.execute("delete from " + DataTbl  + " where timestamp >= CONVERT(DATETIME,'" + StartTimeStr + "')")
-            isoHelper.engine.connect().close()
-
-
-            forecastDf = forecastDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
-            ret=isoHelper.saveDf(DataTbl, Data= forecastDf)
+                startTimeStamp = periodTimeStamp
  
         except BaseException as e:
             print("findAllHrlyPeaks",e)

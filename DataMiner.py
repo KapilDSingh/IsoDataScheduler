@@ -205,9 +205,6 @@ class DataMiner(object):
                forecastDf.reset_index(drop=True,inplace=True)
 
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
-                   forecastDf  = GCPShave.peakSignal(forecastDf, isPSEG)
-
-                   forecastDf.reset_index(drop=True,  inplace=True)
 
                    isoHelper.saveForecastDf(oldestTimestamp, GCPShave, isPSEG, forecastDf= forecastDf, isShortTerm=True)
 
