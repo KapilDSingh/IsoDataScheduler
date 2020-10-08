@@ -50,7 +50,6 @@ class IsodataHelpers(object):
         ret = True
 
         try:
-            print("Data 1", Data)
             minTimeStamp = Data["timestamp"].min()
             maxTimeStamp = Data["timestamp"].max()
             startTimeStr = minTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
@@ -62,7 +61,6 @@ class IsodataHelpers(object):
                     and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')")
 
             connection.close()
-            print("Data 2", Data)
 
             ret = self.saveDf(DataTbl, Data)
 
@@ -610,18 +608,19 @@ class IsodataHelpers(object):
             mergedDf = dfHrlyConsumptionLoad.join(dfPsHrlyLoad, how='outer')\
                         .join(dfPsHrlyVeryShortForecast, how='outer')
             
-            x = mergedDf['psNumReads'] + mergedDf['ForecstNumReads']
-            y = x[x == 12].index.tolist()
+            #x = mergedDf['psNumReads'] + mergedDf['ForecstNumReads']
+            #y = x[x == 12].index.tolist()
             
-            if (len(y) > 0 and (len(mergedDf) < 10)) or max(mergedDf['psNumReads']) == 12:
+            #if (len(y) > 0 and (len(mergedDf) < 10)) or max(mergedDf['psNumReads']) == 12:
           
-                mergedDf.reset_index(inplace=True)
+            mergedDf.reset_index(inplace=True)
 
-                self.clearTbl(startTimeStamp, 'PSEGHrlyLoadsTbl')
+            #self.clearTbl(startTimeStamp, 'PSEGHrlyLoadsTbl')
 
-                mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
+            mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
 
-                self.saveDf('PSEGHrlyLoadsTbl', mergedDf)
+            #self.saveDf('PSEGHrlyLoadsTbl', mergedDf)
+            self.replaceDf('PSEGHrlyLoadsTbl', mergedDf)
 
         except BaseException as e:
             print(e)
@@ -690,17 +689,17 @@ class IsodataHelpers(object):
             mergedDf = dfHrlyConsumptionLoad.join(dfRtoHrlyLoad, how='outer')\
                         .join(dfRtoHrlyVeryShortForecast, how='outer')
 
-            x = mergedDf['rtoNumReads'] + mergedDf['ForecstNumReads']
-            y = x[x == 12].index.tolist()
+            #x = mergedDf['rtoNumReads'] + mergedDf['ForecstNumReads']
+            #y = x[x == 12].index.tolist()
             
-            if (len(y) > 0 and (len(mergedDf) < 10)) or max(mergedDf['rtoNumReads']) == 12:
+            #if (len(y) > 0 and (len(mergedDf) < 10)) or max(mergedDf['rtoNumReads']) == 12:
 
-                mergedDf.reset_index(inplace=True)
+            mergedDf.reset_index(inplace=True)
 
-                self.clearTbl(startTimeStamp, 'RTOHrlyLoadsTbl')
+            #self.clearTbl(startTimeStamp, 'RTOHrlyLoadsTbl')
 
-                mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last') 
-                self.saveDf('RTOHrlyLoadsTbl', mergedDf)
+            mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last') 
+            self.replaceDf('RTOHrlyLoadsTbl', mergedDf)
 
 
         except BaseException as e:

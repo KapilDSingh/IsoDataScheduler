@@ -167,10 +167,10 @@ class MeterData(object):
             
             meterDf.drop(columns=['RMS_Volts_Ln_2','RMS_Volts_Ln_3', 'Power_Factor_Ln_1','Power_Factor_Ln_2','Power_Factor_Ln_3'], inplace=True)
 
-            hrlyDataDf = meterDf.resample('H',label='left', closed='right').agg({"RMS_Volts_Ln_1":'size',"RMS_Watts_Tot":'sum'})
+            hrlyDataDf = meterDf.resample('H',label='right', closed='right').agg({"RMS_Volts_Ln_1":'size',"RMS_Watts_Tot":'sum'})
 
             hrlyDataDf.reset_index(inplace=True)
-            print(hrlyDataDf)
+            #print(hrlyDataDf)
             hrlyDataDf.insert(1, 'MeterID', meter, allow_duplicates = True)
            
             hrlyDataDf.rename(columns={"RMS_Volts_Ln_1": "NumReads",  "RMS_Watts_Tot":"HrlyWatts"},inplace =True)

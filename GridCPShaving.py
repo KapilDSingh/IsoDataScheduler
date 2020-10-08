@@ -105,19 +105,18 @@ class GridCPShaving(object):
                             ,[HrlyForecstLoad]\
                             ,[Peak]\
                             FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                            and timestamp < CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
+                            and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
                 else:
                     sql_query = "SELECT  [timestamp] \
                             ,[LoadForecast]\
                             ,[EvaluatedAt] ,[Area],[Peak]\
                             FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                            and timestamp < CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
+                            and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
 
 
                 forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
                 forecastDf.reset_index(drop =True, inplace=True)
 
-                print(forecastDf)
             
                 forecastDf = self.peakSignal(forecastDf, isPSEG, isHrly)
                 isoHelper.replaceDf(DataTbl, forecastDf)
