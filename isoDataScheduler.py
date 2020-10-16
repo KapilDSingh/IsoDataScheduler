@@ -45,6 +45,8 @@ def main():
 
     isoHelper.emptyAllTbls()
 
+    #dataMiner.fetch_YrHrlyEvalLoadForecast(True, isoHelper)
+    #return
     #GCPShave.findPeaks(True, False, True, isoHelper)
     #GCPShave.findPeaks(True, True, True, isoHelper)
     #GCPShave.findPeaks(False, False, True, isoHelper)
@@ -78,7 +80,7 @@ def main():
     dataMiner.fetch_LoadForecast(False, isoHelper, GCPShave)
     #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
 
-    startDateTime = pd.datetime(2020,7,1)
+    startDateTime = datetime(2020,10,1)
     isoHelper.mergePSEGTimeSeries(startDateTime)
     isoHelper.mergeRTOTimeSeries(startDateTime)
 

@@ -361,8 +361,8 @@ class IsodataHelpers(object):
             if (ret == False):
                 print("saveForecastDf could not save hrlyDataDf")
             else:
-                GCPShave.findPeaks(isPSEG, False, True, self)
-                GCPShave.findPeaks(isPSEG, True, True, self)
+                GCPShave.findPeaks(oldestTimestamp, isPSEG, False, True, self)
+                GCPShave.findPeaks(oldestTimestamp,isPSEG, True, True, self)
 
                 if (isPSEG == True):
                     self.mergePSEGHrlySeries(oldestTimestamp)

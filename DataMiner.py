@@ -214,8 +214,121 @@ class DataMiner(object):
                print("fetch_LoadForecast",e)
         finally:
                 return
+    def fetch_hourlyMeteredLoad(self, isPSEG, startMeteredPeriod, endMeteredPeriod, update, isoHelper):
+        try:
+             if (isPSEG == True):
+                    load_area = 'ps'
+             else:
+                    load_area = 'RTO'
 
+             params = urllib.parse.urlencode({
+             # Request parameters
+             
 
+                'rowCount': '50000',
+                'sort': 'datetime_beginning_ept',
+                'order': 'asc',
+                'startRow': '1',
+                'datetime_beginning_ept':startMeteredPeriod.strftime('%Y-%m-%d %H:%M') + " to " +endMeteredPeriod.strftime('%Y-%m-%d %H:%M'), 
+               
+                'fields': 'datetime_beginning_ept,load_area, mw, is_verified',
+                'load_area': load_area,
+                'format':'json'})
+             if (update == False):  
+                r = self.http.request('GET', "https://api.pjm.com/api/v1/hrl_load_metered?%s" % params, headers=self.headers)
+             else:
+                r = self.http.request('GET', "https://api.pjm.com/api/v1/hrl_load_metered?rowCount=24&sort=datetime_beginning_ept&order=Desc&startRow=1&fields=datetime_beginning_ept,load_area, mw, is_verified&load_area=" + load_area, headers=self.headers)
+
+             jsonData = json.loads(r.data)
+
+             jsonExtractData = jsonData['items']
+             forecastDf = pd.DataFrame(jsonExtractData)
+
+             forecastDf.reset_index(drop=True, inplace= True)
+
+             forecastDf.rename(columns={"datetime_beginning_ept": "timestamp",  "load_area":"Area","mw": "Load","is_verified":"Verified"},inplace =True)
+            
+              
+             forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
+             forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
+
+             if (isPSEG):
+                isoHelper.saveDf(DataTbl='psMeteredLoad', Data= forecastDf)
+             else:
+                isoHelper.saveDf(DataTbl='pjmMeteredLoad', Data= forecastDf)
+
+        except Exception as e:
+               print(e)
+        finally:
+                return
+
+    def fetch_YrHrlyEvalLoadForecast(self, isPSEG, isoHelper):
+        try:
+            if (isPSEG == True):
+                Area = 'pse&g/midatl'
+            else:
+                Area = 'RTO_COMBINED'
+
+            currentDate =datetime.today();
+            eastern = timezone('US/Eastern')
+            startTime =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
+            endTime =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
+          
+            periodTime = startTime
+            startTimeStr = startTime.strftime("%Y-%m-%dT%H:%M:%S")
+
+            while (periodTime < endTime):
+
+                periodTime = periodTime + timedelta(hours =1)
+
+                if (periodTime > endTime):
+                    periodTime = endTime
+            
+                startTimeStr = startTime.strftime("%Y-%m-%dT%H:%M:%S")
+                endTimeStr = periodTime.strftime("%Y-%m-%dT%H:%M:%S")
+
+                params = urllib.parse.urlencode({
+                # Request parameters
+   
+                'rowCount': '50000',
+                'sort': 'evaluated_at_ept',
+                'order': 'asc',
+                'startRow': '1',
+               
+    
+                'fields': 'evaluated_at_ept,forecast_datetime_beginning_ept,forecast_area, forecast_load_mw',
+   
+                'evaluated_at_ept': startTimeStr,
+                
+                'forecast_area': Area,
+                'format':'json'})
+
+                r = self.http.request('GET', "https://api.pjm.com/api/v1/very_short_load_frcst?" + params, headers=self.headers)
+
+                jsonData = json.loads(r.data)
+
+                jsonExtractData = jsonData['items']
+                forecastDf = pd.DataFrame(jsonExtractData)
+
+                forecastDf.reset_index(drop=True, inplace= True)
+            
+           
+                forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", "evaluated_at_ept": "EvaluatedAt", "forecast_area":"Area","forecast_load_mw": "LoadForecast"},inplace =True)
+            
+                forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
+                forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
+
+                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'].values).strftime('%Y-%m-%d %H:%M:%S')
+                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'])
+               
+                forecastDf['Peak'] = 0 
+                startTime = periodTime
+                isoHelper.saveDf(DataTbl='hrlyEvalForecastTbl', Data= forecastDf)
+ 
+        except Exception as e:
+                print("fetch_LoadForecast",e)
+        finally:
+                return
 
     def fetch_7dayLoadForecast(self, isPSEG, isoHelper):
             try:

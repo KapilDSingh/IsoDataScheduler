@@ -69,7 +69,7 @@ class GridCPShaving(object):
 
 
 
-    def findPeaks(self, isPSEG, isHrly, isIncremental, isoHelper):
+    def findPeaks(self, oldestTimestamp, isPSEG, isHrly, isIncremental, isoHelper):
         if (isPSEG == True) and isHrly == False:
             DataTbl = 'forecastTbl'
         elif (isPSEG == True) and isHrly == True:
@@ -119,6 +119,7 @@ class GridCPShaving(object):
 
             
                 forecastDf = self.peakSignal(forecastDf, isPSEG, isHrly)
+                forecastDf = forecastDf[forecastDf['timestamp'] >= oldestTimestamp]
                 isoHelper.replaceDf(DataTbl, forecastDf)
 
                 startTimeStamp = periodTimeStamp
