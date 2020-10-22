@@ -47,11 +47,9 @@ def main():
 
     #dataMiner.fetch_YrHrlyEvalLoadForecast(True, isoHelper)
     #return
-    #GCPShave.findPeaks(True, False, True, isoHelper)
-    #GCPShave.findPeaks(True, True, True, isoHelper)
-    #GCPShave.findPeaks(False, False, True, isoHelper)
-    #GCPShave.findPeaks(False, True, True, isoHelper)
-
+    oldestTimeStamp = datetime(2020,10,1)
+    GCPShave.findPeaks(oldestTimeStamp, True, True, False, isoHelper)
+    GCPShave.findPeaks(oldestTimeStamp, False, True, False, isoHelper)
     meterData.fetchMeterData('550001081', 1000, isoHelper)
     #currentDate =datetime.today();
     #eastern = timezone('US/Eastern')
@@ -80,9 +78,13 @@ def main():
     dataMiner.fetch_LoadForecast(False, isoHelper, GCPShave)
     #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
 
-    startDateTime = datetime(2020,10,1)
+    startDateTime = datetime(2020,10,21)
     isoHelper.mergePSEGTimeSeries(startDateTime)
     isoHelper.mergeRTOTimeSeries(startDateTime)
+    #isoHelper.mergePSEGHrlySeries(startDateTime)
+    #isoHelper.mergeRTOHrlySeries(startDateTime)
+
+
 
     while True:
         putIsoData(dataMiner,isoHelper)

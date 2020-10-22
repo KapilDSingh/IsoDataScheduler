@@ -19,6 +19,7 @@ import base64
 import requests
 from urllib.parse import urlencode, quote_plus,urlparse, parse_qsl
 import pyperclip
+from dateutil.relativedelta import relativedelta
 
 
 
@@ -237,6 +238,53 @@ class IsodataHelpers(object):
             self.engine.connect().close()
 
             return startTimeStamp, endTimeStamp
+
+    def getMaxLoadforTimePeriod(self, oldestTimestamp, isPSEG):
+
+        if (isPSEG == True) :
+            DataTbl = 'psHrlyForecstTbl'
+        elif (isPSEG == False):
+            DataTbl = 'rtoHrlyForecstTbl'
+
+        df = None
+         
+        eastern = timezone('US/Eastern')
+        try:
+
+
+            if (isPSEG):
+                startTime = datetime(oldestTimestamp.year, oldestTimestamp.month, 1, tzinfo=eastern)
+                endTime =  oldestTimestamp
+                numPoints = 1
+            else:
+                startTime =  datetime(oldestTimestamp.year, 6, 1, tzinfo=eastern)
+                endTime =  oldestTimestamp
+                numPoints = 6
+          
+        
+            startTimeStr = startTime.strftime("%Y-%m-%dT%H:%M:%S")
+            endTimeStr = endTime.strftime("%Y-%m-%dT%H:%M:%S")
+
+            sql_query = "SELECT  TOP (" + str(numPoints) + ") [timestamp] \
+                ,[ForecstNumReads]\
+                ,[HrlyForecstLoad]\
+                ,[Peak]\
+                ,[HrlyForecstLoad]/NULLIF([ForecstNumReads],0) as MaxLoad \
+                FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
+                and timestamp < CONVERT(DATETIME,'" + endTimeStr + "')" + " order by MaxLoad desc"
+  
+
+
+            df = pd.read_sql_query(sql_query, self.engine) 
+
+        except BaseException as e:
+
+            print("getMaxLoadforTimePeriod",e)
+  
+        finally:
+            self.engine.connect().close()
+
+            return df
 
 
 

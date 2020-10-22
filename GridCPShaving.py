@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 class GridCPShaving(object):
     """description of class"""
 
-    def peakSignal(self, forecastDF, isPSEG, isHrly):
+    def peakSignal(self, forecastDf, isPSEG, isHrly):
 
         try:
             #register_matplotlib_converters()
@@ -21,51 +21,51 @@ class GridCPShaving(object):
                 minLoadHeight = -87000
 
             if (isHrly == True):
-                divisor = forecastDF.ForecstNumReads
-
+                divisor = forecastDf.ForecstNumReads
+                
                 # find all the peaks that associated with the positive peaks
-                peaks_positive, _ = scipy.signal.find_peaks(forecastDF.HrlyForecstLoad \
+                peaks_positive, _ = scipy.signal.find_peaks(forecastDf.HrlyForecstLoad \
                     / divisor, height = maxLoadHeight, threshold = None, distance=10)
 
                 # find all the peaks that associated with the negative peaks
-                peaks_negative, _ = scipy.signal.find_peaks(-forecastDF.HrlyForecstLoad \
+                peaks_negative, _ = scipy.signal.find_peaks(-forecastDf.HrlyForecstLoad \
                    / divisor, height = minLoadHeight, threshold = None, distance=10)
           
             else:
                 # find all the peaks that associated with the positive peaks
-                peaks_positive, _ = scipy.signal.find_peaks(forecastDF.LoadForecast, height = maxLoadHeight,\
+                peaks_positive, _ = scipy.signal.find_peaks(forecastDf.LoadForecast, height = maxLoadHeight,\
                    threshold = None, distance=30)
 
                 # find all the peaks that associated with the negative peaks
-                peaks_negative, _ = scipy.signal.find_peaks(-forecastDF.LoadForecast, height = minLoadHeight,\
+                peaks_negative, _ = scipy.signal.find_peaks(-forecastDf.LoadForecast, height = minLoadHeight,\
                    threshold = None, distance=30)
 
-            forecastDF.loc[:, 'Peak'] =0;
+            forecastDf.loc[:, 'Peak'] =0;
 
             if (len(peaks_positive) > 0):
-                forecastDF.loc[peaks_positive, 'Peak'] = 1
+                forecastDf.loc[peaks_positive, 'Peak'] = 1
             
             if (len(peaks_negative)>0):
-                forecastDF.loc[peaks_negative, 'Peak'] = -1
+                forecastDf.loc[peaks_negative, 'Peak'] = -1
 
-            #forecastDF.set_index('timestamp', inplace=True) 
+            #forecastDf.set_index('timestamp', inplace=True) 
             ##plt.figure(figsize = (80, 80))
-            #plt.plot_date(forecastDF.index, forecastDF.HrlyForecstLoad  / forecastDF.ForecstNumReads, linewidth = 2)
+            #plt.plot_date(forecastDf.index, forecastDf.HrlyForecstLoad  / forecastDf.ForecstNumReads, linewidth = 2)
 
-            #plt.plot_date(forecastDF.index[peaks_positive], forecastDF.HrlyForecstLoad[peaks_positive] / forecastDF.ForecstNumReads[peaks_positive], 'ro', label = 'positive peaks')
-            #plt.plot_date(forecastDF.index[peaks_negative], forecastDF.HrlyForecstLoad[peaks_negative] / forecastDF.ForecstNumReads[peaks_negative], 'go', label = 'negative peaks')
+            #plt.plot_date(forecastDf.index[peaks_positive], forecastDf.HrlyForecstLoad[peaks_positive] / forecastDf.ForecstNumReads[peaks_positive], 'ro', label = 'positive peaks')
+            #plt.plot_date(forecastDf.index[peaks_negative], forecastDf.HrlyForecstLoad[peaks_negative] / forecastDf.ForecstNumReads[peaks_negative], 'go', label = 'negative peaks')
  
             #plt.xlabel('timestamp')
             #plt.ylabel('Load Forecast (MW)')
             ##plt.legend(loc = 4)
             #plt.show()
 
-            #forecastDF.reset_index(inplace=True)
+            #forecastDf.reset_index(inplace=True)
         except Exception as e:
             print("peakSignal",e)
         finally:
            
-            return forecastDF
+            return forecastDf
 
 
 
@@ -117,17 +117,54 @@ class GridCPShaving(object):
                 forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
                 forecastDf.reset_index(drop =True, inplace=True)
 
-            
+
                 forecastDf = self.peakSignal(forecastDf, isPSEG, isHrly)
-                forecastDf = forecastDf[forecastDf['timestamp'] >= oldestTimestamp]
-                isoHelper.replaceDf(DataTbl, forecastDf)
+ 
+                if (isIncremental == True):
+                    forecastDf = forecastDf[forecastDf['timestamp'] >= oldestTimestamp]
+
+                if ((isHrly == True) and (len(forecastDf) > 0)):
+                    forecastDf = self.CheckCPShaveHour(isPSEG, forecastDf, isoHelper)
+
+                if (len(forecastDf) > 0):
+                    isoHelper.replaceDf(DataTbl, forecastDf)
 
                 startTimeStamp = periodTimeStamp
  
         except BaseException as e:
-            print("findAllPeaks",e)
+            print("findPeaks",e)
         finally:
             return forecastDf
 
+    def CheckCPShaveHour(self, isPSEG, forecastDf, isoHelper):
 
+        try:
+            divisor = forecastDf.ForecstNumReads
+            normalizedForecastDf= forecastDf.HrlyForecstLoad / divisor
 
+            maxIdx = normalizedForecastDf.idxmax() 
+
+            startTimeStamp = forecastDf['timestamp'].min()
+            print('maxIdx = ', maxIdx,forecastDf)
+
+            prevPkDf = isoHelper.getMaxLoadforTimePeriod(startTimeStamp, isPSEG)
+            if (prevPkDf.empty == True) :
+                periodMaxLoad = 0
+            else:
+                numRows =  len(prevPkDf) 
+           
+                if (numRows > 0):
+                     periodMaxLoad = prevPkDf.loc[numRows - 1, 'MaxLoad']
+                else:
+                    periodMaxLoad = 0
+
+            maxForecastLoad = normalizedForecastDf[maxIdx]
+            Peak = forecastDf.loc[maxIdx, 'Peak']
+
+            if ((Peak == 1) and  (maxForecastLoad > periodMaxLoad)):
+                 forecastDf.loc[maxIdx, 'Peak'] = 2
+
+        except BaseException as e:
+            print("CheckCPShaveHour",e)
+        finally:
+            return forecastDf
