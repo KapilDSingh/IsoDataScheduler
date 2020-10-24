@@ -329,11 +329,11 @@ class IsodataHelpers(object):
 
             if (ret == False):
                 print("get_current_hr_load could not save hrlyDataDf")
-            else:
-                if (Area == 'ps'):
-                    self.mergePSEGHrlySeries(minTimeStamp)
-                else:
-                    self.mergeRTOHrlySeries(minTimeStamp)
+            #else:
+            #    if (Area == 'ps'):
+            #        self.mergePSEGHrlySeries(minTimeStamp)
+            #    else:
+            #        self.mergeRTOHrlySeries(minTimeStamp)
 
 
 
