@@ -55,7 +55,7 @@ class MeterData(object):
             oldestTimestamp =meterDf['timestamp'].min()
             isoHelper.clearTbl(oldestTimestamp, 'meterTbl')
 
-            isoHelper.saveDf(DataTbl='meterTbl', Data= meterDf);
+            isoHelper.saveDf('meterTbl', meterDf)
 
             meterDf.set_index("timestamp", inplace = True)
             self.get_current_hr_consumption(meter, meterDf, isoHelper)
@@ -160,8 +160,6 @@ class MeterData(object):
                 meterDf = pd.read_sql(meterTblQuery,isoHelper.engine)
                 
 
-                isoHelper.engine.connect().close()
-
                 meterDf.reset_index(drop=True,inplace=True)
                 meterDf.set_index('timestamp', inplace=True) 
             
@@ -189,5 +187,5 @@ class MeterData(object):
             print(e)
   
         finally:
-            isoHelper.engine.connect().close()
+            return
 

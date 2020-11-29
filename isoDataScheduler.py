@@ -27,9 +27,9 @@ def main():
         #dataMiner.fetch_hourlyMeteredLoad(False, 'CurrentYear', True,isoHelper)
         meterData.fetchMeterData('550001081', 1, isoHelper)
         #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
-        dataMiner.fetch_LoadForecast(True, isoHelper,GCPShave)
+        dataMiner.fetch_LoadForecast( 'ps', isoHelper,GCPShave)
         #dataMiner.fetch_7dayLoadForecast(False, isoHelper)
-        dataMiner.fetch_LoadForecast(False, isoHelper,GCPShave)
+        dataMiner.fetch_LoadForecast('PJM RTO', isoHelper,GCPShave)
 
         df = isoHelper.getLmp_latest(nodeId='PSEG',numIntervals=6)
 
@@ -43,46 +43,49 @@ def main():
     meterData = MeterData()
     GCPShave = GridCPShaving()
 
-    isoHelper.emptyAllTbls()
+    #isoHelper.emptyAllTbls()
 
-    #dataMiner.fetch_YrHrlyEvalLoadForecast(True, isoHelper)
-    #return
-    oldestTimeStamp = datetime(2020,10,1)
-    GCPShave.findPeaks(oldestTimeStamp, True, True, False, isoHelper)
-    GCPShave.findPeaks(oldestTimeStamp, False, True, False, isoHelper)
-    meterData.fetchMeterData('550001081', 1000, isoHelper)
-    #currentDate =datetime.today();
-    #eastern = timezone('US/Eastern')
-    #startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
-    #endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
+    ##dataMiner.fetch_YrHrlyEvalLoadForecast(True, isoHelper)
+    ##return
+    #oldestTimeStamp = datetime(2020,10,1)
+    ##GCPShave.findPeaks(oldestTimeStamp, True, True, False, isoHelper)
+    ##GCPShave.findPeaks(oldestTimeStamp, False, True, False, isoHelper)
+    ##GCPShave.findPeaks(oldestTimeStamp, True, False, False, isoHelper)
+    ##GCPShave.findPeaks(oldestTimeStamp, False, False, False, isoHelper)
+
+    ##meterData.fetchMeterData('550001081', 1000, isoHelper)
+    ##currentDate =datetime.today();
+    ##eastern = timezone('US/Eastern')
+    ##startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
+    ##endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
    
-    #dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
-    #dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
+    ##dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
+    ##dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
 
-    ##meterData.genHist('9214411', isoHelper)
-    #dataMiner.genPSEGLoadHist(isoHelper)
-    #dataMiner.genRTOLoadHist(isoHelper)
+    ###meterData.genHist('9214411', isoHelper)
+    ##dataMiner.genPSEGLoadHist(isoHelper)
+    ##dataMiner.genRTOLoadHist(isoHelper)
    
-    #rng.strftime('%B %d, %Y, %r')
-    i=1
+    ##rng.strftime('%B %d, %Y, %r')
+    #i=1
    
 
-    dataMiner.fetch_LMP(8640, isoHelper)
-    dataMiner.fetch_InstantaneousLoad(8640, 'ps',isoHelper)
-    dataMiner.fetch_InstantaneousLoad(8640, 'PJM RTO',isoHelper)
+    #dataMiner.fetch_LMP(8640, isoHelper)
+    #dataMiner.fetch_InstantaneousLoad(8640, 'ps',isoHelper)
+    #dataMiner.fetch_InstantaneousLoad(8640, 'PJM RTO',isoHelper)
 
-    dataMiner.fetch_GenFuel(528, isoHelper)
+    #dataMiner.fetch_GenFuel(528, isoHelper)
 
     
-    dataMiner.fetch_LoadForecast(True, isoHelper, GCPShave)
-    dataMiner.fetch_LoadForecast(False, isoHelper, GCPShave)
-    #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
+    #dataMiner.fetch_LoadForecast( 'ps', isoHelper, GCPShave)
+    #dataMiner.fetch_LoadForecast('PJM RTO', isoHelper, GCPShave)
+    ##dataMiner.fetch_7dayLoadForecast(True, isoHelper)
 
-    startDateTime = datetime(2020,10,21)
-    isoHelper.mergePSEGTimeSeries(startDateTime)
-    isoHelper.mergeRTOTimeSeries(startDateTime)
-    #isoHelper.mergePSEGHrlySeries(startDateTime)
-    #isoHelper.mergeRTOHrlySeries(startDateTime)
+    #startDateTime = datetime(2020,10,1)
+    #isoHelper.mergePSEGTimeSeries(startDateTime)
+    #isoHelper.mergeRTOTimeSeries(startDateTime)
+    ##isoHelper.mergePSEGHrlySeries(startDateTime)
+    ##isoHelper.mergeRTOHrlySeries(startDateTime)
 
 
 

@@ -71,11 +71,6 @@ class DataMiner(object):
 
         try:
 
-            if (Area =='ps'):
-                DataTbl='psInstLoadTbl'
-            else:
-                DataTbl='loadTbl'
-
             r = self.http.request('GET', 'https://api.pjm.com/api/v1/inst_load?area=' + Area + '&rowCount=' + str(numRows) + '&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,area,instantaneous_load&format=JSON', headers=self.headers)
             
             jsonData = json.loads(r.data)
@@ -93,11 +88,7 @@ class DataMiner(object):
             loadDf['timestamp'] = pd.to_datetime(loadDf['timestamp'])
             loadDf = loadDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
 
-            if (numRows > 1):
-                oldestTimestamp =loadDf['timestamp'].min()
-                isoHelper.clearTbl(oldestTimestamp, DataTbl)
-
-            ret=isoHelper.saveDf(DataTbl, Data= loadDf)
+            ret = isoHelper.saveLoadDf(Area, False, loadDf)
 
             if ((numRows ==1) and  ret==True) :
 
@@ -109,15 +100,12 @@ class DataMiner(object):
                 else:
                     isoHelper.mergeRTOTimeSeries(mergeDt)
 
-
-            loadDf.set_index("timestamp", inplace = True)
-            hrlyLoadDf = isoHelper.get_current_hr_load(loadDf, Area)
-
+ 
         except Exception as e:
   
-          print("Fetch Instantaneous Load Unexpected error:", e)
+            print("Fetch Instantaneous Load Unexpected error:", e)
         finally:
-            return
+            return ret
 
 
 
@@ -149,12 +137,12 @@ class DataMiner(object):
             return
 
 
-    def fetch_LoadForecast(self, isPSEG, isoHelper,GCPShave):
+    def fetch_LoadForecast(self, Area, isoHelper,GCPShave):
         try:
-               if (isPSEG == True):
-                    Area = 'pse&g/midatl'
+               if (Area == 'ps'):
+                    AreaCode = 'PSE&G/MIDATL'
                else:
-                    Area = 'RTO_COMBINED'
+                    AreaCode = 'RTO_COMBINED'
 
                params = urllib.parse.urlencode({
                 # Request parameters
@@ -169,7 +157,7 @@ class DataMiner(object):
    
                 'evaluated_at_ept': '5minutesago',
                 
-                'forecast_area': Area,
+                'forecast_area': AreaCode,
                 'format':'json'})
                r = self.http.request('GET', "https://api.pjm.com/api/v1/very_short_load_frcst?" + params, headers=self.headers)
 
@@ -181,8 +169,11 @@ class DataMiner(object):
                forecastDf.reset_index(drop=True, inplace= True)
             
            
-               forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", "evaluated_at_ept": "EvaluatedAt", "forecast_area":"Area","forecast_load_mw": "LoadForecast"},inplace =True)
-            
+               forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", \
+                   "evaluated_at_ept": "EvaluatedAt", "forecast_area":"Area","forecast_load_mw": "LoadForecast"},inplace =True)
+
+               forecastDf['Area'] = Area
+
                forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
                forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
 
@@ -200,13 +191,16 @@ class DataMiner(object):
                oldestTimestamp =forecastDf['timestamp'].min()
 
                forecastDf = forecastDf.sort_values('timestamp').drop_duplicates(['timestamp'],keep='last')
-               dfTimeStamp = isoHelper.get_latest_Forecast(isPSEG,isShortTerm=True)
+               dfTimeStamp = isoHelper.get_latest_Forecast(Area,isShortTerm=True)
                
                forecastDf.reset_index(drop=True,inplace=True)
-
+               
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
 
-                   isoHelper.saveForecastDf(oldestTimestamp, GCPShave, isPSEG, forecastDf= forecastDf, isShortTerm=True)
+                    isoHelper.saveLoadDf(Area, True, forecastDf);
+                   
+                    GCPShave.findPeaks(oldestTimestamp, Area, False, True, isoHelper)
+                    GCPShave.findPeaks(oldestTimestamp,Area, True, True, isoHelper)
 
                i = 1
 
@@ -214,60 +208,13 @@ class DataMiner(object):
                print("fetch_LoadForecast",e)
         finally:
                 return
-    def fetch_hourlyMeteredLoad(self, isPSEG, startMeteredPeriod, endMeteredPeriod, update, isoHelper):
+
+    def fetch_YrHrlyEvalLoadForecast(self, Area, isoHelper):
         try:
-             if (isPSEG == True):
-                    load_area = 'ps'
-             else:
-                    load_area = 'RTO'
-
-             params = urllib.parse.urlencode({
-             # Request parameters
-             
-
-                'rowCount': '50000',
-                'sort': 'datetime_beginning_ept',
-                'order': 'asc',
-                'startRow': '1',
-                'datetime_beginning_ept':startMeteredPeriod.strftime('%Y-%m-%d %H:%M') + " to " +endMeteredPeriod.strftime('%Y-%m-%d %H:%M'), 
-               
-                'fields': 'datetime_beginning_ept,load_area, mw, is_verified',
-                'load_area': load_area,
-                'format':'json'})
-             if (update == False):  
-                r = self.http.request('GET', "https://api.pjm.com/api/v1/hrl_load_metered?%s" % params, headers=self.headers)
-             else:
-                r = self.http.request('GET', "https://api.pjm.com/api/v1/hrl_load_metered?rowCount=24&sort=datetime_beginning_ept&order=Desc&startRow=1&fields=datetime_beginning_ept,load_area, mw, is_verified&load_area=" + load_area, headers=self.headers)
-
-             jsonData = json.loads(r.data)
-
-             jsonExtractData = jsonData['items']
-             forecastDf = pd.DataFrame(jsonExtractData)
-
-             forecastDf.reset_index(drop=True, inplace= True)
-
-             forecastDf.rename(columns={"datetime_beginning_ept": "timestamp",  "load_area":"Area","mw": "Load","is_verified":"Verified"},inplace =True)
-            
-              
-             forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
-             forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
-
-             if (isPSEG):
-                isoHelper.saveDf(DataTbl='psMeteredLoad', Data= forecastDf)
-             else:
-                isoHelper.saveDf(DataTbl='pjmMeteredLoad', Data= forecastDf)
-
-        except Exception as e:
-               print(e)
-        finally:
-                return
-
-    def fetch_YrHrlyEvalLoadForecast(self, isPSEG, isoHelper):
-        try:
-            if (isPSEG == True):
-                Area = 'pse&g/midatl'
+            if (Area == 'ps'):
+                AreaCode = 'pse&g/midatl'
             else:
-                Area = 'RTO_COMBINED'
+                AreaCode = 'RTO_COMBINED'
 
             currentDate =datetime.today();
             eastern = timezone('US/Eastern')
@@ -300,7 +247,7 @@ class DataMiner(object):
    
                 'evaluated_at_ept': startTimeStr,
                 
-                'forecast_area': Area,
+                'forecast_area': AreaCode,
                 'format':'json'})
 
                 r = self.http.request('GET', "https://api.pjm.com/api/v1/very_short_load_frcst?" + params, headers=self.headers)
@@ -313,7 +260,8 @@ class DataMiner(object):
                 forecastDf.reset_index(drop=True, inplace= True)
             
            
-                forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", "evaluated_at_ept": "EvaluatedAt", "forecast_area":"Area","forecast_load_mw": "LoadForecast"},inplace =True)
+                forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", \
+                    "evaluated_at_ept": "EvaluatedAt", "forecast_area":"Area","forecast_load_mw": "LoadForecast"},inplace =True)
             
                 forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
                 forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
@@ -330,71 +278,10 @@ class DataMiner(object):
         finally:
                 return
 
-    def fetch_7dayLoadForecast(self, isPSEG, isoHelper):
-            try:
-                   if (isPSEG == True):
-                        Area = 'PSE%26G/MIDATL'
-                   else:
-                        Area = 'RTO_COMBINED'
 
-                   params = urllib.parse.urlencode({
-                    # Request parameters
-   
-                    'rowCount': '50000',
-                    'sort': 'forecast_datetime_beginning_ept',
-                    'order': 'asc',
-                    'startRow': '1',
-               
-        #load_frcstd_7_day?rowCount=100&sort=forecast_datetime_beginning_ept&order=Asc&startRow=1&fields=forecast_datetime_beginning_ept,forecast_area,
-        #forecast_load_mw&forecast_area=PSE%26G/MIDATL
-                    'fields': 'evaluated_at_ept,forecast_datetime_beginning_ept,forecast_area, forecast_load_mw',
-   
-                    'evaluated_at_ept': '15SecondsAgo',
-                
-                    'forecast_area': Area,
-                    'format':'json'})
-                   r = self.http.request('GET', "https://api.pjm.com/api/v1/load_frcstd_7_day?rowCount=600&sort=forecast_datetime_beginning_ept&order=Asc&startRow=1&fields=forecast_datetime_beginning_ept,forecast_area, forecast_load_mw&forecast_area=" + Area, headers=self.headers)
-
-                   jsonData = json.loads(r.data)
-
-                   jsonExtractData = jsonData['items']
-                   forecastDf = pd.DataFrame(jsonExtractData)
-
-                   forecastDf.reset_index(drop = True, inplace = True)
-            
-           
-                   forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", "forecast_area":"Area","forecast_load_mw": "Weekly Load Forecast"},inplace =True)
-            
-                   forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
-                   forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
-                   EvaluatedAt = datetime.now()
-                   forecastDf['EvaluatedAt'] = EvaluatedAt
-                   newestTimestamp =forecastDf['timestamp'].max()
-                   
-                   oldestTimestamp =forecastDf['timestamp'].min()
-                   dfTimeStamp = isoHelper.get_latest_Forecast(isPSEG, isShortTerm=False)
-        
-
-                   if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
-
-                       if (isPSEG == True):
-                           isoHelper.saveForecastDf(oldestTimestamp, GCPShave, isPSEG, forecastDf= forecastDf, isShortTerm=False)
-                       else:
-                           isoHelper.saveForecastDf(oldestTimestamp, GCPShave, isPSEG, forecastDf= forecastDf, isShortTerm=False)
-
-                   i = 1
-
-            except Exception as e:
-                   print(e)
-            finally:
-                    return
-                   
-
-
-
-    def fetch_hourlyMeteredLoad(self, isPSEG, startMeteredPeriod, endMeteredPeriod, update, isoHelper):
+    def fetch_hourlyMeteredLoad(self, Area, startMeteredPeriod, endMeteredPeriod, update, isoHelper):
         try:
-             if (isPSEG == True):
+             if (Area == 'ps'):
                     load_area = 'ps'
              else:
                     load_area = 'RTO'
@@ -430,7 +317,7 @@ class DataMiner(object):
              forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
              forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
 
-             if (isPSEG):
+             if (Area):
                 isoHelper.saveDf(DataTbl='psMeteredLoad', Data= forecastDf)
              else:
                 isoHelper.saveDf(DataTbl='pjmMeteredLoad', Data= forecastDf)

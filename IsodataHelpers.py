@@ -92,7 +92,7 @@ class IsodataHelpers(object):
             print("ClearTbl Unexpected error:", e)
 
         finally:
-            self.engine.connect().close()
+            connection.close()
             return ret
 
     def emptyAllTbls(self):
@@ -111,157 +111,118 @@ class IsodataHelpers(object):
         connection.close()
         return
 
-    def getLmp_period(self, start="2018-07-26 13:10:00.000000", end="2018-07-26 13:20:00.000000", nodeId='PSEG'):
-        
-        df = None
-        
-        #self.engine
-        #=create_self.engine('mssql+pymssql://KapilSingh:Acfjo12#@100.25.120.167\EC2AMAZ-I2S81GT:1433/ISODB')
-        
-        try:
-            sql_query = 'select timestamp, node_id, [5 Minute Real Time LMP] from dbo.lmpTbl where node_id = %(nodeId)s and ( timestamp between %(start)s  and %(end)s )  order by timestamp asc'
-            df = pd.read_sql_query(sql_query, self.engine, params ={
-                                                           'node_id': nodeId,
-                                                           'start' : start,
-                                                           'end' : end
-                                                         })
 
-
-        except BaseException as e:
-          print("Get LMP", e)
-  
-        finally:
-            self.engine.connect().close()
-
-        return
-
-    def getLmp_latest(self,  nodeId='PSEG', numIntervals=12):
-
-        df = None
  
-
-        
+    def save_hrly_load(self, isForecast, loadDf,  instTbl, HrlyTbl):     
+    
         try:
-            sql_query = "select top 5 timestamp, node_id, [5 Minute Weighted Avg. LMP] from dbo.lmpTbl where node_id ='PSEG'   order by timestamp desc"
+            oldestTimestamp =loadDf['timestamp'].min()
+                
+            loadDf = self.getHrlyLoad(oldestTimestamp, instTbl)
 
-            df = pd.read_sql_query(sql_query, self.engine) 
- 
-        except BaseException as e:
-          print(e)
-  
-        finally:
-            self.engine.connect().close()
-
-        return df
-
-    def getPSEGMeterData(self,  MeterId='9214411', startMonth=1, endMonth=12, include=True):
-
-        df = None
- 
-        condition = "  (month(timestamp) >='" + str(startMonth) + "' and month(timestamp) <='" + str(endMonth) + "' )"
-        if include == True:
-           condition
-        else:
-           condition = "  not " + condition
-        
-        try:
-            sql_query = "select KW from dbo.PSEGMeter where MeterId = '" + MeterId + "' and " + condition + "    order by timestamp asc"
-
-            df = pd.read_sql_query(sql_query, self.engine) 
- 
-        except BaseException as e:
-          print(e)
-  
-        finally:
-            self.engine.connect().close()
-
-        return df
-
-    def get_latest_Forecast(self, isPSEG, isShortTerm=True):
-
-        df = None
-         
-        try:
-            if (isShortTerm == True):
-                if (isPSEG):
-                    sql_query = "select top 1 timestamp, EvaluatedAt from forecastTbl order by timestamp desc,EvaluatedAt  desc"
-                else:
-                    sql_query = "select top 1 timestamp, EvaluatedAt from rtoForecastTbl order by timestamp desc,EvaluatedAt  desc"
-
+            loadDf.reset_index(drop=True,inplace=True)
+            loadDf.set_index('timestamp', inplace=True) 
+           
+            if (isForecast == True):
+                hrlyDataDf = loadDf.resample('H',label='right', closed='right').agg({"Area":'size',"LoadForecast":'sum'})
+                hrlyDataDf.rename(columns={"Area": "ForecstNumReads",  "LoadForecast":"HrlyForecstLoad"},inplace =True)
             else:
-                if (isPSEG):
-                    sql_query = "select top 1 timestamp, EvaluatedAt from forecast7dayTbl order by timestamp desc,EvaluatedAt desc"
-                else:
-                    sql_query = "select top 1 timestamp, EvaluatedAt from rtoForecast7dayTbl order by timestamp desc,EvaluatedAt desc"
+                hrlyDataDf = loadDf.resample('H',label='right', closed='right').agg({"Area":'size',"Load":'sum'})
+                hrlyDataDf.rename(columns={"Area": "NumReads",  "Load":"HrlyInstLoad"},inplace =True)
 
-            df = pd.read_sql_query(sql_query, self.engine) 
- 
+
+            hrlyDataDf.reset_index(inplace=True)
+            minTimeStamp = hrlyDataDf["timestamp"].min()
+            self.clearTbl(minTimeStamp,  HrlyTbl, True)
+
+            ret = self.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
+
+
+            if (ret == False):
+                print("save_hrly_load could not save hrlyDataDf")
+
         except BaseException as e:
-            print("get_latest_Forecast",e)
+            print("save_hrly_load",e)
   
         finally:
-            self.engine.connect().close()
+            return ret
 
-        return df
+    def getHrlyLoad(self, timestamp, DataTbl):
 
-    def getStartEndForecastTimestamp(self, isPSEG, isHrly):
-
-        if (isPSEG == True) and isHrly == False:
-            DataTbl = 'forecastTbl'
-        elif (isPSEG == True) and isHrly == True:
-            DataTbl = 'psHrlyForecstTbl'
-        elif (isPSEG == False) and isHrly == False:
-            DataTbl = 'rtoForecastTbl'
-        elif (isPSEG == False) and isHrly == True:
-            DataTbl = 'rtoHrlyForecstTbl'
-
-        df = None
-         
         try:
-            sql_query = "select top 1 timestamp from " + DataTbl + " order by timestamp "
+            startTimestamp = timestamp.replace(minute=0, second = 0, microsecond =0)
+                
+            if (startTimestamp == timestamp):
+                startTimestamp -= timedelta(hours=1)                
 
-            df = pd.read_sql_query(sql_query, self.engine) 
+            HrStartTimeStr = startTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
+            EndTimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
 
-            startTimeStamp = df.iloc[0, 0]
+            instLoadTblQuery = "SELECT * FROM " + DataTbl + " where timestamp  > CONVERT(DATETIME,'" + HrStartTimeStr + "') "
+                   # and timestamp  <= CONVERT(DATETIME,'" + EndTimeStr + "')"
+                
+            loadDf = pd.read_sql(instLoadTblQuery,self.engine)
 
-            sql_query = sql_query + " desc"
-
-            df = pd.read_sql_query(sql_query, self.engine) 
-
-            endTimeStamp = df.iloc[0, 0]
-
- 
         except BaseException as e:
-            print("get_latest_Forecast",e)
+            print("getHrLoadOrLoadForecast ",e)
   
         finally:
-            self.engine.connect().close()
+            return loadDf
 
-            return startTimeStamp, endTimeStamp
+ 
+    def saveLoadDf(self, Area, isForecast, loadDf):
+        
+        try:
+            if (isForecast == True):
+                if (Area == 'ps'):
+                    DataTbl = 'forecastTbl'
+                    HrlyTbl = 'psHrlyForecstTbl'
+                else:
+                    DataTbl = 'rtoForecastTbl'
+                    HrlyTbl = 'rtoHrlyForecstTbl'
+            else:
+                 if (Area == 'ps'):
+                    DataTbl = 'psInstLoadTbl'
+                    HrlyTbl = 'psHrlyLoadTbl'
+                 else:
+                    DataTbl = 'loadTbl'
+                    HrlyTbl = 'rtoHrlyLoadTbl'
+        
+            if (len(loadDf.index) > 1):
+                oldestTimestamp =loadDf['timestamp'].min()
+                self.clearTbl(oldestTimestamp, DataTbl)
 
-    def getMaxLoadforTimePeriod(self, oldestTimestamp, isPSEG):
+            ret = self.saveDf(DataTbl, loadDf)
 
-        if (isPSEG == True) :
-            DataTbl = 'psHrlyForecstTbl'
-        elif (isPSEG == False):
-            DataTbl = 'rtoHrlyForecstTbl'
+            if (ret == True):
+
+                self.save_hrly_load(isForecast, loadDf,  DataTbl, HrlyTbl)
+
+
+        except BaseException as e:
+            print("saveLoadDf",e)
+  
+        finally:
+            return ret
+
+    def getMaxLoadforTimePeriod(self, oldestTimestamp, Area):
 
         df = None
-         
+        endTime =  oldestTimestamp 
+
         eastern = timezone('US/Eastern')
+
+        if (Area == 'ps') :
+            DataTbl = 'psHrlyForecstTbl'
+            startTime = datetime(oldestTimestamp.year, oldestTimestamp.month, 1, tzinfo=eastern)
+            numPoints = 1
+        elif (Area == 'PJM RTO'):
+            DataTbl = 'rtoHrlyForecstTbl'
+            startTime =  datetime(oldestTimestamp.year, 6, 1, tzinfo=eastern)
+            numPoints = 6
+
         try:
-
-
-            if (isPSEG):
-                startTime = datetime(oldestTimestamp.year, oldestTimestamp.month, 1, tzinfo=eastern)
-                endTime =  oldestTimestamp
-                numPoints = 1
-            else:
-                startTime =  datetime(oldestTimestamp.year, 6, 1, tzinfo=eastern)
-                endTime =  oldestTimestamp
-                numPoints = 6
-          
-        
+       
             startTimeStr = startTime.strftime("%Y-%m-%dT%H:%M:%S")
             endTimeStr = endTime.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -282,72 +243,10 @@ class IsodataHelpers(object):
             print("getMaxLoadforTimePeriod",e)
   
         finally:
-            self.engine.connect().close()
 
             return df
 
-
-
-    def get_current_hr_load(self, loadDf, Area):
-
-        df = None
-        
-        if (Area == 'ps'):
-            HrlyTbl = 'psHrlyLoadTbl'
-            InstLoadTbl = 'psInstLoadTbl'
-        else:
-             HrlyTbl = 'rtoHrlyLoadTbl'
-             InstLoadTbl = 'loadTbl'
-        
-        try:
-            if (len(loadDf.index) == 1):
-
-                timestamp = pd.to_datetime(loadDf.index[0])
-
-                timestamp = timestamp.replace(minute=0, second = 0, microsecond =0)
-                
-                if (timestamp == pd.to_datetime(loadDf.index[0])):
-                    timestamp -= timedelta(hours=1)                
-
-                TimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
-
-                instLoadTblQuery = "SELECT timestamp, Area, Load FROM " + InstLoadTbl + " where timestamp  > CONVERT(DATETIME,'" + TimeStr + "')"
-                
-                loadDf = pd.read_sql(instLoadTblQuery,self.engine)
-                loadDf.reset_index(drop=True,inplace=True)
-                loadDf.set_index('timestamp', inplace=True) 
-            
-            hrlyDataDf = loadDf.resample('H',label='right', closed='right').agg({"Area":'size',"Load":'sum'})
-           
-            hrlyDataDf.rename(columns={"Area": "NumReads",  "Load":"HrlyInstLoad"},inplace =True)
-            hrlyDataDf.reset_index(inplace=True)
-            minTimeStamp = hrlyDataDf["timestamp"].min()
-            self.clearTbl(minTimeStamp,  HrlyTbl, True)
-
-            ret = self.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
-
-
-            if (ret == False):
-                print("get_current_hr_load could not save hrlyDataDf")
-            #else:
-            #    if (Area == 'ps'):
-            #        self.mergePSEGHrlySeries(minTimeStamp)
-            #    else:
-            #        self.mergeRTOHrlySeries(minTimeStamp)
-
-
-
-        except BaseException as e:
-            print("get_current_hr_load",e)
-  
-        finally:
-            self.engine.connect().close()
-
-
-            return hrlyDataDf
-
-
-
+ 
     def fetchLoadThresholds(month):
         try:
             sql_query = "SELECT TOP (1000) [MONTH_Num], [  PJM 2020  ], [  PJM 2021  ], [  PSEG 2020  ],[  PSEG 2021  ],[  Billing Day  ],[  ThresholdPJM  ],[  ThresholdPSEG  ] \
@@ -359,118 +258,8 @@ class IsodataHelpers(object):
           print(e)
   
         finally:
-            self.engine.connect().close()
 
-        return df
-
-    def saveForecastDf(self,oldestTimestamp, GCPShave, isPSEG, forecastDf, isShortTerm=True):
-        
-        try:
-            if (isPSEG == True):
-                DataTbl = 'forecastTbl'
-                HrlyTbl = 'psHrlyForecstTbl'
-            else:
-                DataTbl = 'rtoForecastTbl'
-                HrlyTbl = 'rtoHrlyForecstTbl'
-            
-            self.clearTbl(oldestTimestamp, DataTbl)
-
-            ret = self.saveDf(DataTbl, forecastDf)
-            if (ret == False):
-                print("save instant ForecastDf failed")
-
-            prevHrTimestamp = oldestTimestamp.replace(minute=0, second = 0, microsecond =0)
-            #prevHrTimestamp -= timedelta(hours=90)
-            currentHrTimestamp = prevHrTimestamp + timedelta(hours=1)      
-
-            prevHrTimeStr = prevHrTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
-
-            connection = self.engine.connect()
-
-            forecstLoadTblQuery = "SELECT timestamp, Area, LoadForecast FROM " + DataTbl + " where timestamp  > CONVERT(DATETIME,'" + prevHrTimeStr + "')"
-
-            forecstLoadDf = pd.read_sql(forecstLoadTblQuery,self.engine)
-
-            self.engine.connect().close()
-
-            forecstLoadDf.reset_index(drop=True,inplace=True)
-            forecstLoadDf.set_index('timestamp', inplace=True) 
-            
-            hrlyDataDf = forecstLoadDf.resample('H',label='right', closed='right').agg({"Area":'size',"LoadForecast":'sum'})
-           
-            hrlyDataDf.rename(columns={"Area": "ForecstNumReads",  "LoadForecast":"HrlyForecstLoad"},inplace =True)
-
-            hrlyDataDf.reset_index(inplace=True)
-            
-            self.clearTbl(currentHrTimestamp, HrlyTbl)   
-
-            ret = self.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
-
-            if (ret == False):
-                print("saveForecastDf could not save hrlyDataDf")
-            else:
-                GCPShave.findPeaks(oldestTimestamp, isPSEG, False, True, self)
-                GCPShave.findPeaks(oldestTimestamp,isPSEG, True, True, self)
-
-                if (isPSEG == True):
-                    self.mergePSEGHrlySeries(oldestTimestamp)
-                else:
-                    self.mergeRTOHrlySeries(oldestTimestamp)
-
-        except BaseException as e:
-            print("saveForecastDf",e)
-  
-        finally:
-            self.engine.connect().close()
-
-            return hrlyDataDf
-
-
-    def getPSEGLoad(self, startMonth=1, endMonth=12, include=True):
-
-        df = None
- 
-        condition = "  (month(timestamp) >='" + str(startMonth) + "' and month(timestamp) <='" + str(endMonth) + "' )"
-        if include == True:
-           condition
-        else:
-           condition = "  not " + condition
-        
-        try:
-            sql_query = "select Load from dbo.psMeteredLoad where " + condition + "    order by timestamp asc"
-
-            df = pd.read_sql_query(sql_query, self.engine) 
- 
-        except BaseException as e:
-          print("getPSEGLoad",e)
-  
-        finally:
-            self.engine.connect().close()
-
-        return df
-
-    def getRTOLoad(self, startMonth=1, endMonth=12, include=True):
-
-        df = None
- 
-        condition = "  (month(timestamp) >='" + str(startMonth) + "' and month(timestamp) <='" + str(endMonth) + "' )"
-        if include == True:
-           condition
-        else:
-           condition = "  not " + condition
-        
-        try:
-            sql_query = "select [Load] from dbo.[pjmMeteredLoad] where " + condition + "    order by timestamp asc"
-
-            df = pd.read_sql_query(sql_query, self.engine) 
- 
-        except BaseException as e:
-          print("getRTOLoad",e)
-  
-        finally:
-            self.engine.connect().close()
-
-        return df
+            return df
 
 
     def mergePSEGTimeSeries(self, startTimeStamp):
@@ -500,7 +289,7 @@ class IsodataHelpers(object):
             #psForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load Forecast]
             #as ps7DayForecast, EvaluatedAt FROM forecast7dayTbl where
             #timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
-            #dfPs7DayForecast= pd.read_sql(psForecast7dayTblQuery,self.engine)
+            #dfPs7DayForecast= pd.read_sql(psForecast7dayTblQuery,engine)
             #dfPs7DayForecast =
             #dfPs7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
             #del dfPs7DayForecast['EvaluatedAt']
@@ -511,7 +300,7 @@ class IsodataHelpers(object):
             #Forecast] as rto7DayForecast, EvaluatedAt FROM rtoForecast7dayTbl
             #where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
             #dfRto7DayForecast=
-            #pd.read_sql(rtoForecast7dayTblQuery,self.engine)
+            #pd.read_sql(rtoForecast7dayTblQuery,engine)
             #dfRto7DayForecast =
             #dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
             #del dfRto7DayForecast['EvaluatedAt']
@@ -586,8 +375,6 @@ class IsodataHelpers(object):
                       #.join(dfRto7DayForecast, how='outer')
             mergedDf.reset_index(inplace=True)
 
-            connection = self.engine.connect()
-
             self.clearTbl(startTimeStamp, 'RtoLoadsTbl')
 
             mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
@@ -598,14 +385,13 @@ class IsodataHelpers(object):
             return None
   
         finally:
-            self.engine.connect().close()
             #print(mergedDf)
             #print(dfRtoInstLoad)
             #print(dfConsumptionLoad)
             #print(dfRtoVeryShortForecast)
             #print(dfRto7DayForecast)
 
-        return None
+            return None
 
     def mergePSEGHrlySeries(self, startTimeStamp):
 
@@ -631,26 +417,6 @@ class IsodataHelpers(object):
             dfPsHrlyVeryShortForecast.set_index('timestamp', inplace=True) 
 
 
-            #psForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load Forecast]
-            #as ps7DayForecast, EvaluatedAt FROM forecast7dayTbl where
-            #timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
-            #dfPs7DayForecast= pd.read_sql(psForecast7dayTblQuery,self.engine)
-            #dfPs7DayForecast =
-            #dfPs7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
-            #del dfPs7DayForecast['EvaluatedAt']
-            #dfPs7DayForecast.reset_index(drop=True,inplace=True)
-            #dfPs7DayForecast.set_index('timestamp', inplace=True)
-
-            #rtoForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load
-            #Forecast] as rto7DayForecast, EvaluatedAt FROM rtoForecast7dayTbl
-            #where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
-            #dfRto7DayForecast=
-            #pd.read_sql(rtoForecast7dayTblQuery,self.engine)
-            #dfRto7DayForecast =
-            #dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
-            #del dfRto7DayForecast['EvaluatedAt']
-            #dfRto7DayForecast.reset_index(drop=True,inplace=True)
-            #dfRto7DayForecast.set_index('timestamp', inplace=True)
 
 
             mergedDf = dfHrlyConsumptionLoad.join(dfPsHrlyLoad, how='outer')\
@@ -710,30 +476,6 @@ class IsodataHelpers(object):
             dfRtoHrlyVeryShortForecast.set_index('timestamp', inplace=True) 
 
 
-            #RtoForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load
-            #Forecast]
-            #as Rto7DayForecast, EvaluatedAt FROM forecast7dayTbl where
-            #timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
-            #dfRto7DayForecast=
-            #pd.read_sql(RtoForecast7dayTblQuery,self.engine)
-            #dfRto7DayForecast =
-            #dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
-            #del dfRto7DayForecast['EvaluatedAt']
-            #dfRto7DayForecast.reset_index(drop=True,inplace=True)
-            #dfRto7DayForecast.set_index('timestamp', inplace=True)
-
-            #rtoForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load
-            #Forecast] as rto7DayForecast, EvaluatedAt FROM rtoForecast7dayTbl
-            #where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
-            #dfRto7DayForecast=
-            #pd.read_sql(rtoForecast7dayTblQuery,self.engine)
-            #dfRto7DayForecast =
-            #dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
-            #del dfRto7DayForecast['EvaluatedAt']
-            #dfRto7DayForecast.reset_index(drop=True,inplace=True)
-            #dfRto7DayForecast.set_index('timestamp', inplace=True)
-
-
             mergedDf = dfHrlyConsumptionLoad.join(dfRtoHrlyLoad, how='outer')\
                         .join(dfRtoHrlyVeryShortForecast, how='outer')
 
@@ -765,4 +507,163 @@ class IsodataHelpers(object):
 
             return None
 
+    def getPSEGLoad(self, startMonth=1, endMonth=12, include=True):
+
+        df = None
+ 
+        condition = "  (month(timestamp) >='" + str(startMonth) + "' and month(timestamp) <='" + str(endMonth) + "' )"
+        if include == True:
+           condition
+        else:
+           condition = "  not " + condition
+        
+        try:
+            sql_query = "select Load from dbo.psMeteredLoad where " + condition + "    order by timestamp asc"
+
+            df = pd.read_sql_query(sql_query, self.engine) 
+ 
+        except BaseException as e:
+          print("getPSEGLoad",e)
+  
+        finally:
+            return df
+
+    def getRTOLoad(self, startMonth=1, endMonth=12, include=True):
+
+        df = None
+ 
+        condition = "  (month(timestamp) >='" + str(startMonth) + "' and month(timestamp) <='" + str(endMonth) + "' )"
+        if include == True:
+           condition
+        else:
+           condition = "  not " + condition
+        
+        try:
+            sql_query = "select [Load] from dbo.[pjmMeteredLoad] where " + condition + "    order by timestamp asc"
+
+            df = pd.read_sql_query(sql_query, self.engine) 
+ 
+        except BaseException as e:
+          print("getRTOLoad",e)
+  
+        finally:
+            return df
+
+
+    def getLmp_latest(self,  nodeId='PSEG', numIntervals=12):
+
+        df = None
+ 
+
+        
+        try:
+            sql_query = "select top 5 timestamp, node_id, [5 Minute Weighted Avg. LMP] from dbo.lmpTbl where node_id ='PSEG'   order by timestamp desc"
+
+            df = pd.read_sql_query(sql_query, self.engine) 
+ 
+        except BaseException as e:
+          print(e)
+  
+        finally:
+            return df
+
+    def getPSEGMeterData(self,  MeterId='9214411', startMonth=1, endMonth=12, include=True):
+
+        df = None
+ 
+        condition = "  (month(timestamp) >='" + str(startMonth) + "' and month(timestamp) <='" + str(endMonth) + "' )"
+        if include == True:
+           condition
+        else:
+           condition = "  not " + condition
+        
+        try:
+            sql_query = "select KW from dbo.PSEGMeter where MeterId = '" + MeterId + "' and " + condition + "    order by timestamp asc"
+
+            df = pd.read_sql_query(sql_query, self.engine) 
+ 
+        except BaseException as e:
+          print(e)
+  
+        finally:
+            return df
+
+    def get_latest_Forecast(self, Area, isShortTerm=True):
+
+        df = None
+         
+        try:
+            if (isShortTerm == True):
+                if (Area == 'ps'):
+                    sql_query = "select top 1 timestamp, EvaluatedAt from forecastTbl order by timestamp desc,EvaluatedAt  desc"
+                else:
+                    sql_query = "select top 1 timestamp, EvaluatedAt from rtoForecastTbl order by timestamp desc,EvaluatedAt  desc"
+
+            else:
+                if (Area == 'ps'):
+                    sql_query = "select top 1 timestamp, EvaluatedAt from forecast7dayTbl \
+                    order by timestamp desc,EvaluatedAt desc"
+                else:
+                    sql_query = "select top 1 timestamp, EvaluatedAt from rtoForecast7dayTbl \
+                    order by timestamp desc,EvaluatedAt desc"
+
+            df = pd.read_sql_query(sql_query, self.engine) 
+ 
+        except BaseException as e:
+            print("get_latest_Forecast",e)
+  
+        finally:
+
+            return df
+
+    def getStartEndForecastTimestamp(self, Area, isHrly):
+
+        if (Area == 'ps') and isHrly == False:
+            DataTbl = 'forecastTbl'
+        elif (Area == 'ps') and isHrly == True:
+            DataTbl = 'psHrlyForecstTbl'
+        elif (Area == 'PJM RTO') and isHrly == False:
+            DataTbl = 'rtoForecastTbl'
+        elif (Area == 'PJM RTO') and isHrly == True:
+            DataTbl = 'rtoHrlyForecstTbl'
+
+        df = None
+         
+        try:
+            sql_query = "select top 1 timestamp from " + DataTbl + " order by timestamp "
+
+            df = pd.read_sql_query(sql_query, self.engine) 
+
+            startTimeStamp = df.iloc[0, 0]
+
+            sql_query = sql_query + " desc"
+
+            df = pd.read_sql_query(sql_query, self.engine) 
+
+            endTimeStamp = df.iloc[0, 0]
+
+ 
+        except BaseException as e:
+            print("get_latest_Forecast",e)
+  
+        finally:
+            return startTimeStamp, endTimeStamp
+
+    def getLmp_period(self, start="2018-07-26 13:10:00.000000", end="2018-07-26 13:20:00.000000", nodeId='PSEG'):
+        
+        df = None
+                
+        try:
+            sql_query = 'select timestamp, node_id, [5 Minute Real Time LMP] from dbo.lmpTbl where node_id = %(nodeId)s and ( timestamp between %(start)s  and %(end)s )  order by timestamp asc'
+            df = pd.read_sql_query(sql_query, self.engine, params ={
+                                                           'node_id': nodeId,
+                                                           'start' : start,
+                                                           'end' : end
+                                                         })
+        except BaseException as e:
+          print("Get LMP", e)
+  
+        finally:
+
+            return df
 

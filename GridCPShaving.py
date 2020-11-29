@@ -8,12 +8,12 @@ from datetime import datetime, timedelta
 class GridCPShaving(object):
     """description of class"""
 
-    def peakSignal(self, forecastDf, isPSEG, isHrly):
+    def peakSignal(self, forecastDf, Area, isHrly):
 
         try:
             #register_matplotlib_converters()
             
-            if (isPSEG):
+            if (Area == 'ps'):
                 maxLoadHeight = 1000
                 minLoadHeight = -1000
             else:
@@ -69,28 +69,32 @@ class GridCPShaving(object):
 
 
 
-    def findPeaks(self, oldestTimestamp, isPSEG, isHrly, isIncremental, isoHelper):
-        if (isPSEG == True) and isHrly == False:
+    def findPeaks(self, oldestTimestamp, Area, isHrly, isIncremental, isoHelper):
+        if (Area == 'ps') and isHrly == False:
             DataTbl = 'forecastTbl'
-        elif (isPSEG == True) and isHrly == True:
+        elif (Area == 'ps') and isHrly == True:
             DataTbl = 'psHrlyForecstTbl'
-        elif (isPSEG == False) and isHrly == False:
+        elif (Area == 'PJM RTO') and isHrly == False:
             DataTbl = 'rtoForecastTbl'
-        elif (isPSEG == False) and isHrly == True:
+        elif (Area == 'PJM RTO') and isHrly == True:
             DataTbl = 'rtoHrlyForecstTbl'
 
 
         forecastDf = None
 
         try:
-            startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(isPSEG, isHrly)
+
+            startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(Area, isHrly)
 
             if (isIncremental == True):
                 startTimeStamp = endTimeStamp - timedelta(hours = 24)
+            else:
+                startTimeStamp = oldestTimestamp
 
             periodTimeStamp = startTimeStamp
 
             while (periodTimeStamp < endTimeStamp):
+
                 periodTimeStamp = periodTimeStamp + timedelta(hours = 24)
 
                 if (periodTimeStamp > endTimeStamp):
@@ -118,13 +122,13 @@ class GridCPShaving(object):
                 forecastDf.reset_index(drop =True, inplace=True)
 
 
-                forecastDf = self.peakSignal(forecastDf, isPSEG, isHrly)
+                forecastDf = self.peakSignal(forecastDf, Area, isHrly)
  
                 if (isIncremental == True):
                     forecastDf = forecastDf[forecastDf['timestamp'] >= oldestTimestamp]
 
                 if ((isHrly == True) and (len(forecastDf) > 0)):
-                    forecastDf = self.CheckCPShaveHour(isPSEG, forecastDf, isoHelper)
+                    forecastDf = self.CheckCPShaveHour(Area, forecastDf, isoHelper)
 
                 if (len(forecastDf) > 0):
                     isoHelper.replaceDf(DataTbl, forecastDf)
@@ -136,7 +140,7 @@ class GridCPShaving(object):
         finally:
             return forecastDf
 
-    def CheckCPShaveHour(self, isPSEG, forecastDf, isoHelper):
+    def CheckCPShaveHour(self, Area, forecastDf, isoHelper):
 
         try:
             divisor = forecastDf.ForecstNumReads
@@ -147,7 +151,7 @@ class GridCPShaving(object):
             startTimeStamp = forecastDf['timestamp'].min()
             print('maxIdx = ', maxIdx,forecastDf)
 
-            prevPkDf = isoHelper.getMaxLoadforTimePeriod(startTimeStamp, isPSEG)
+            prevPkDf = isoHelper.getMaxLoadforTimePeriod(startTimeStamp, Area)
             if (prevPkDf.empty == True) :
                 periodMaxLoad = 0
             else:
