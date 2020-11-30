@@ -91,6 +91,7 @@ class GridCPShaving(object):
             else:
                 startTimeStamp = oldestTimestamp
 
+
             periodTimeStamp = startTimeStamp
 
             while (periodTimeStamp < endTimeStamp):
@@ -143,6 +144,7 @@ class GridCPShaving(object):
     def CheckCPShaveHour(self, Area, forecastDf, isoHelper):
 
         try:
+            return forecastDf
             divisor = forecastDf.ForecstNumReads
             normalizedForecastDf= forecastDf.HrlyForecstLoad / divisor
 
