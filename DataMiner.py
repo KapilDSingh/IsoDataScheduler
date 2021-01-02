@@ -91,14 +91,18 @@ class DataMiner(object):
             ret = isoHelper.saveLoadDf(Area, False, loadDf)
 
             if ((numRows ==1) and  ret==True) :
+                timestamp = loadDf.loc[0, 'timestamp']
+                isoHelper.CheckPeakEnd(timestamp, Area)
 
                 mergeDt = loadDf['timestamp'][0]
                 mergeDt = mergeDt.replace(minute=mergeDt.minute-0)
                      
                 if (Area =='ps'):
                     isoHelper.mergePSEGTimeSeries(mergeDt)
+                    isoHelper.mergePSEGHrlySeries(mergeDt)
                 else:
                     isoHelper.mergeRTOTimeSeries(mergeDt)
+                    isoHelper.mergeRTOHrlySeries(mergeDt)
 
  
         except Exception as e:
@@ -174,33 +178,44 @@ class DataMiner(object):
 
                forecastDf['Area'] = Area
 
-               forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
+               #forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
                forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
 
-               forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'].values).strftime('%Y-%m-%d %H:%M:%S')
+               #forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'].values).strftime('%Y-%m-%d %H:%M:%S')
                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'])
                
                forecastDf['Peak'] = 0 
 
                #forecastDf = forecastDf.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
                
-               forecastDf = forecastDf.sort_values('timestamp',ascending=False)
+               newestEvaluatedAt = forecastDf['EvaluatedAt'].max()
+
+               forecastDf = forecastDf[forecastDf['EvaluatedAt'] == newestEvaluatedAt]
 
                newestTimestamp =forecastDf['timestamp'].max()
 
                oldestTimestamp =forecastDf['timestamp'].min()
+ 
+               forecastDf = forecastDf.sort_values('timestamp')
 
-               forecastDf = forecastDf.sort_values('timestamp').drop_duplicates(['timestamp'],keep='last')
+
                dfTimeStamp = isoHelper.get_latest_Forecast(Area,isShortTerm=True)
                
                forecastDf.reset_index(drop=True,inplace=True)
                
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
+                   if (Area == 'ps'):
+                       if (newestEvaluatedAt  != oldestTimestamp):
+                            print ("EvaluatedAt inconsistent")
+                       else:
+                            print ("EvaluatedAt OK")
 
-                    isoHelper.saveLoadDf(Area, True, forecastDf);
+                       #print("forecastDf=", forecastDf)
+
+                   isoHelper.saveLoadDf(Area, True, forecastDf);
                    
-                    GCPShave.findPeaks(oldestTimestamp, Area, False, True, isoHelper)
-                    GCPShave.findPeaks(oldestTimestamp,Area, True, True, isoHelper)
+                   GCPShave.findPeaks(oldestTimestamp, Area, False, True, isoHelper)
+                   GCPShave.findPeaks(oldestTimestamp,Area, True, True, isoHelper)
 
                i = 1
 

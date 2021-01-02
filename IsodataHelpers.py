@@ -118,7 +118,7 @@ class IsodataHelpers(object):
         try:
             oldestTimestamp =loadDf['timestamp'].min()
                 
-            loadDf = self.getHrlyLoad(oldestTimestamp, instTbl)
+            loadDf, load, td_minutes = self.getHrlyLoad(isForecast, oldestTimestamp, instTbl)
 
             loadDf.reset_index(drop=True,inplace=True)
             loadDf.set_index('timestamp', inplace=True) 
@@ -131,12 +131,21 @@ class IsodataHelpers(object):
                 hrlyDataDf.rename(columns={"Area": "NumReads",  "Load":"HrlyInstLoad"},inplace =True)
 
 
+
             hrlyDataDf.reset_index(inplace=True)
             minTimeStamp = hrlyDataDf["timestamp"].min()
             self.clearTbl(minTimeStamp,  HrlyTbl, True)
 
+            if (isForecast):
+
+                hrlyDataDf["EvaluatedAt"]=oldestTimestamp
+                hrlyDataDf["Peak"]=0
+                print ("hrlyDataDf=",hrlyDataDf)
+                print("HrlyTbl =", HrlyTbl)
+
             ret = self.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
 
+            
 
             if (ret == False):
                 print("save_hrly_load could not save hrlyDataDf")
@@ -147,7 +156,7 @@ class IsodataHelpers(object):
         finally:
             return ret
 
-    def getHrlyLoad(self, timestamp, DataTbl):
+    def getHrlyLoad(self, isForecast, timestamp, DataTbl):
 
         try:
             startTimestamp = timestamp.replace(minute=0, second = 0, microsecond =0)
@@ -158,16 +167,23 @@ class IsodataHelpers(object):
             HrStartTimeStr = startTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
             EndTimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
 
-            instLoadTblQuery = "SELECT * FROM " + DataTbl + " where timestamp  > CONVERT(DATETIME,'" + HrStartTimeStr + "') "
-                   # and timestamp  <= CONVERT(DATETIME,'" + EndTimeStr + "')"
+            instLoadTblQuery = "SELECT * FROM " + DataTbl + " where timestamp  > CONVERT(DATETIME,'" + HrStartTimeStr + "') \
+                    and timestamp  <= CONVERT(DATETIME,'" + EndTimeStr + "')"
                 
             loadDf = pd.read_sql(instLoadTblQuery,self.engine)
+            if (isForecast == True):
+                load = loadDf["LoadForecast"].mean()
+            else:
+                load = loadDf["Load"].mean()
+
+            td = timestamp - startTimestamp
+            td_minutes = td.total_seconds() / 60.00
 
         except BaseException as e:
-            print("getHrLoadOrLoadForecast ",e)
+            print("getHrlyLoad ",e)
   
         finally:
-            return loadDf
+            return loadDf, load, td_minutes
 
  
     def saveLoadDf(self, Area, isForecast, loadDf):
@@ -195,15 +211,63 @@ class IsodataHelpers(object):
             ret = self.saveDf(DataTbl, loadDf)
 
             if (ret == True):
-
                 self.save_hrly_load(isForecast, loadDf,  DataTbl, HrlyTbl)
-
 
         except BaseException as e:
             print("saveLoadDf",e)
   
         finally:
             return ret
+
+    def CheckPeakEnd(self, timestamp, Area):
+
+        try:
+            if (Area == 'ps'):
+
+                forecastTbl = 'psHrlyForecstTbl'
+                DataTbl = 'psHrlyLoadTbl'
+                instDataTbl = 'psInstLoadTbl'
+
+            if (Area == 'PJM RTO'):
+
+                forecastTbl = 'rtoHrlyForecstTbl'
+                DataTbl = 'rtoHrlyLoadTbl'
+                instDataTbl = 'loadTbl'
+
+
+            PrevPkTimestamp = timestamp.replace(minute=0, second = 0, microsecond =0)
+
+            peakQuery = "select Peak from " + forecastTbl +  "  where timestamp = '" + PrevPkTimestamp.strftime("%Y-%m-%dT%H:%M:%S")  +"'"
+
+            connection = self.engine.connect()
+
+            resPeak = connection.execute(peakQuery).scalar()
+
+            if ((resPeak == None) or (resPeak ==0)):
+
+                peakLoadQuery = "select [HrlyInstLoad]/ NumReads as Load from " + DataTbl +  "  where timestamp = '" + PrevPkTimestamp.strftime("%Y-%m-%dT%H:%M:%S")  +"'"
+                pkLoad = connection.execute(peakLoadQuery).scalar()
+               
+                loadDf, load, current_Minutes = self.getHrlyLoad(False, timestamp, instDataTbl)
+
+                if (load ==load):
+                     currentTimestamp = PrevPkTimestamp + timedelta(hours=1)        
+                     sql_query = "Update [ISODB].[dbo]." + forecastTbl + " set Peak= " + str(current_Minutes) + \
+                         " where timestamp = '" + currentTimestamp.strftime("%Y-%m-%dT%H:%M:%S") +"'"
+
+                     result = connection.execute(sql_query)
+
+                     pkTblQuery =  "Update [ISODB].[dbo].[peakForecastTbl] set EndTime= " + str(current_Minutes) + \
+                         " where Area = '" + Area + "' and  timestamp = '" + PrevPkTimestamp.strftime("%Y-%m-%dT%H:%M:%S")  +"'"
+
+                     result = connection.execute(pkTblQuery)
+        except BaseException as e:
+            print("CheckPeakEnd",e)
+  
+        finally:
+            return result
+
+
 
     def getMaxLoadforTimePeriod(self, oldestTimestamp, Area):
 
@@ -273,10 +337,10 @@ class IsodataHelpers(object):
             dfPsInstLoad.reset_index(drop=True,inplace=True)
             dfPsInstLoad.set_index('timestamp', inplace=True) 
 
-            meterTblQuery = "SELECT timestamp, [RMS_Watts_Tot] as ConsumptionLoad FROM meterTbl   where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "')"
-            dfConsumptionLoad = pd.read_sql(meterTblQuery,self.engine)
-            dfConsumptionLoad.reset_index(drop=True,inplace=True)
-            dfConsumptionLoad.set_index('timestamp', inplace=True) 
+            #meterTblQuery = "SELECT timestamp, [RMS_Watts_Tot] as ConsumptionLoad FROM meterTbl   where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "')"
+            #dfConsumptionLoad = pd.read_sql(meterTblQuery,self.engine)
+            #dfConsumptionLoad.reset_index(drop=True,inplace=True)
+            #dfConsumptionLoad.set_index('timestamp', inplace=True) 
 
             psVeryShortForecastQuery = "SELECT timestamp, LoadForecast as [psVeryShortForecast], EvaluatedAt, Peak FROM  forecastTbl where timestamp  >= CONVERT(DATETIME,'" + TimeStr + "')"
             dfPsVeryShortForecast = pd.read_sql(psVeryShortForecastQuery,self.engine)
@@ -308,8 +372,8 @@ class IsodataHelpers(object):
             #dfRto7DayForecast.set_index('timestamp', inplace=True)
 
 
-            mergedDf = dfConsumptionLoad.join(dfPsInstLoad, how='outer')\
-                      .join(dfPsVeryShortForecast, how='outer')
+            #mergedDf = dfConsumptionLoad.join(dfPsInstLoad, how='outer')\
+            mergedDf = dfPsInstLoad.join(dfPsVeryShortForecast, how='outer')
                       
             mergedDf.reset_index(inplace=True)
 
@@ -344,10 +408,10 @@ class IsodataHelpers(object):
             dfRtoInstLoad.reset_index(drop=True,inplace=True)
             dfRtoInstLoad.set_index('timestamp', inplace=True) 
 
-            meterTblQuery = "SELECT timestamp, [RMS_Watts_Tot] as ConsumptionLoad FROM meterTbl   where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
-            dfConsumptionLoad = pd.read_sql(meterTblQuery,self.engine)
-            dfConsumptionLoad.reset_index(drop=True,inplace=True)
-            dfConsumptionLoad.set_index('timestamp', inplace=True) 
+            #meterTblQuery = "SELECT timestamp, [RMS_Watts_Tot] as ConsumptionLoad FROM meterTbl   where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
+            #dfConsumptionLoad = pd.read_sql(meterTblQuery,self.engine)
+            #dfConsumptionLoad.reset_index(drop=True,inplace=True)
+            #dfConsumptionLoad.set_index('timestamp', inplace=True) 
 
 
             rtoVeryShortForecastQuery = "SELECT timestamp, LoadForecast as [rtoVeryShortForecast], EvaluatedAt, Peak  FROM  rtoForecastTbl where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
@@ -370,8 +434,8 @@ class IsodataHelpers(object):
             #dfRto7DayForecast.set_index('timestamp', inplace=True)
 
 
-            mergedDf = dfConsumptionLoad.join(dfRtoInstLoad, how='outer')\
-                      .join(dfRtoVeryShortForecast, how='outer')
+            #mergedDf = dfConsumptionLoad.join(dfRtoInstLoad, how='outer')\
+            mergedDf =dfRtoInstLoad.join(dfRtoVeryShortForecast, how='outer')
                       #.join(dfRto7DayForecast, how='outer')
             mergedDf.reset_index(inplace=True)
 

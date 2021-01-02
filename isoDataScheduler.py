@@ -44,25 +44,23 @@ def main():
     GCPShave = GridCPShaving()
 
     isoHelper.emptyAllTbls()
+    oldestTimeStamp = datetime(2020,12,1)
 
-
-    #meterData.fetchMeterData('550001081', 1000, isoHelper)
-    #currentDate =datetime.today();
-    #eastern = timezone('US/Eastern')
-    #startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
-    #endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
+    meterData.fetchMeterData('550001081', 1000, isoHelper)
+    currentDate =datetime.today();
+    eastern = timezone('US/Eastern')
+    startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
+    endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
    
-    #dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
-    #dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
+    dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
+    dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
 
-    ##meterData.genHist('9214411', isoHelper)
-    #dataMiner.genPSEGLoadHist(isoHelper)
-    #dataMiner.genRTOLoadHist(isoHelper)
+    #meterData.genHist('9214411', isoHelper)
+    dataMiner.genPSEGLoadHist(isoHelper)
+    dataMiner.genRTOLoadHist(isoHelper)
    
     #rng.strftime('%B %d, %Y, %r')
     i=1
-   
-
     dataMiner.fetch_LMP(8640, isoHelper)
     dataMiner.fetch_InstantaneousLoad(8640, 'ps',isoHelper)
     dataMiner.fetch_InstantaneousLoad(8640, 'PJM RTO',isoHelper)
@@ -72,18 +70,21 @@ def main():
     
     dataMiner.fetch_LoadForecast( 'ps', isoHelper, GCPShave)
     dataMiner.fetch_LoadForecast('PJM RTO', isoHelper, GCPShave)
-    #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
+    ##dataMiner.fetch_7dayLoadForecast(True, isoHelper)
+    
 
-    oldestTimeStamp = datetime(2019,10,1)
     GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
     GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', False, False, isoHelper)
     GCPShave.findPeaks(oldestTimeStamp,  'ps', True, False, isoHelper)
     GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
+    GCPShave.checkPeaks('ps', True, isoHelper)
+    GCPShave.checkPeaks('PJM RTO', True, isoHelper)
+
 
     isoHelper.mergePSEGTimeSeries(oldestTimeStamp)
     isoHelper.mergeRTOTimeSeries(oldestTimeStamp)
-    #isoHelper.mergePSEGHrlySeries(startDateTime)
-    #isoHelper.mergeRTOHrlySeries(startDateTime)
+    isoHelper.mergePSEGHrlySeries(oldestTimeStamp)
+    isoHelper.mergeRTOHrlySeries(oldestTimeStamp)
 
 
 
