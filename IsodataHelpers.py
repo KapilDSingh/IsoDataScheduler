@@ -130,8 +130,6 @@ class IsodataHelpers(object):
                 hrlyDataDf = loadDf.resample('H',label='right', closed='right').agg({"Area":'size',"Load":'sum'})
                 hrlyDataDf.rename(columns={"Area": "NumReads",  "Load":"HrlyInstLoad"},inplace =True)
 
-
-
             hrlyDataDf.reset_index(inplace=True)
             minTimeStamp = hrlyDataDf["timestamp"].min()
             self.clearTbl(minTimeStamp,  HrlyTbl, True)
@@ -166,15 +164,17 @@ class IsodataHelpers(object):
 
             HrStartTimeStr = startTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
             EndTimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
-
-            instLoadTblQuery = "SELECT * FROM " + DataTbl + " where timestamp  > CONVERT(DATETIME,'" + HrStartTimeStr + "') \
-                    and timestamp  <= CONVERT(DATETIME,'" + EndTimeStr + "')"
+            
+            instLoadTblQuery = "SELECT * FROM " + DataTbl + " where timestamp  > CONVERT(DATETIME,'" + HrStartTimeStr + "')"
                 
-            loadDf = pd.read_sql(instLoadTblQuery,self.engine)
             if (isForecast == True):
+                loadDf = pd.read_sql(instLoadTblQuery,self.engine)
                 load = loadDf["LoadForecast"].mean()
+
             else:
-                load = loadDf["Load"].mean()
+               instLoadTblQuery = instLoadTblQuery + "and timestamp  <= CONVERT(DATETIME,'" + EndTimeStr + "')"
+               loadDf = pd.read_sql(instLoadTblQuery,self.engine)
+               load = loadDf["Load"].mean()
 
             td = timestamp - startTimestamp
             td_minutes = td.total_seconds() / 60.00
@@ -257,7 +257,7 @@ class IsodataHelpers(object):
 
                      result = connection.execute(sql_query)
 
-                     pkTblQuery =  "Update [ISODB].[dbo].[peakForecastTbl] set EndTime= " + str(current_Minutes) + \
+                     pkTblQuery =  "Update [ISODB].[dbo].[peakTable] set EndTime= " + str(current_Minutes) + \
                          " where Area = '" + Area + "' and  timestamp = '" + PrevPkTimestamp.strftime("%Y-%m-%dT%H:%M:%S")  +"'"
 
                      result = connection.execute(pkTblQuery)
@@ -657,19 +657,11 @@ class IsodataHelpers(object):
         df = None
          
         try:
-            if (isShortTerm == True):
-                if (Area == 'ps'):
-                    sql_query = "select top 1 timestamp, EvaluatedAt from forecastTbl order by timestamp desc,EvaluatedAt  desc"
-                else:
-                    sql_query = "select top 1 timestamp, EvaluatedAt from rtoForecastTbl order by timestamp desc,EvaluatedAt  desc"
 
+            if (Area == 'ps'):
+                sql_query = "select top 1 timestamp, EvaluatedAt from forecastTbl order by timestamp desc,EvaluatedAt  desc"
             else:
-                if (Area == 'ps'):
-                    sql_query = "select top 1 timestamp, EvaluatedAt from forecast7dayTbl \
-                    order by timestamp desc,EvaluatedAt desc"
-                else:
-                    sql_query = "select top 1 timestamp, EvaluatedAt from rtoForecast7dayTbl \
-                    order by timestamp desc,EvaluatedAt desc"
+                sql_query = "select top 1 timestamp, EvaluatedAt from rtoForecastTbl order by timestamp desc,EvaluatedAt  desc"
 
             df = pd.read_sql_query(sql_query, self.engine) 
  

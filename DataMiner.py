@@ -92,7 +92,7 @@ class DataMiner(object):
 
             if ((numRows ==1) and  ret==True) :
                 timestamp = loadDf.loc[0, 'timestamp']
-                isoHelper.CheckPeakEnd(timestamp, Area)
+                #isoHelper.CheckPeakEnd(timestamp, Area)
 
                 mergeDt = loadDf['timestamp'][0]
                 mergeDt = mergeDt.replace(minute=mergeDt.minute-0)
@@ -204,20 +204,12 @@ class DataMiner(object):
                forecastDf.reset_index(drop=True,inplace=True)
                
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
-                   if (Area == 'ps'):
-                       if (newestEvaluatedAt  != oldestTimestamp):
-                            print ("EvaluatedAt inconsistent")
-                       else:
-                            print ("EvaluatedAt OK")
-
-                       #print("forecastDf=", forecastDf)
 
                    isoHelper.saveLoadDf(Area, True, forecastDf);
                    
                    GCPShave.findPeaks(oldestTimestamp, Area, False, True, isoHelper)
                    GCPShave.findPeaks(oldestTimestamp,Area, True, True, isoHelper)
 
-               i = 1
 
         except Exception as e:
                print("fetch_LoadForecast",e)
