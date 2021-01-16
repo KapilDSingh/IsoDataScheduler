@@ -20,11 +20,11 @@ class GridCPShaving(object):
             
             if (Area == 'ps'):
                 maxLoadHeight = 3000
-                prominenceHgt = 1000
+                prominenceHgt = 10
 
             else:
                 maxLoadHeight = 45000
-                prominenceHgt = 3000
+                prominenceHgt = 45
 
             if (isHrly == True):
                 divisor = forecastDf.ForecstNumReads
@@ -36,45 +36,41 @@ class GridCPShaving(object):
                 #peaks_negative, _ = scipy.signal.find_peaks(-forecastDf.HrlyForecstLoad \
                 #   / divisor, height = minLoadHeight, threshold = None, distance=10)
                 prominences = peak_prominences(series, peaks_positive)[0]
+                contour_heights = series[peaks_positive] - prominences
+
+                forecastDf.loc[:, 'Peak'] =0;
+
+                if (len(peaks_positive) > 0):
+                    forecastDf.loc[peaks_positive, 'Peak'] = 1
+                
+            
+                #if (len(peaks_negative)>0):
+                #    forecastDf.loc[peaks_negative, 'Peak'] = -1
+
+                #forecastDf.set_index('timestamp', inplace=True) 
+                #plt.figure(figsize = (1200,800))
+                #plt.plot_date(forecastDf.index, series, linewidth = 2)
+
+                #plt.plot_date(forecastDf.index[peaks_positive], series[peaks_positive], 'ro', label = 'positive peaks')
+                
+                #plt.vlines(x=forecastDf.index[peaks_positive], ymin=contour_heights, ymax= series[peaks_positive])
+
+                #plt.ylabel('Load Forecast (MW)')
+                #plt.show()
+                #forecastDf.reset_index(inplace=True)
             else:
                 # find all the peaks that associated with the positive peaks
                 peaks_positive, _ = scipy.signal.find_peaks(forecastDf.LoadForecast, height = maxLoadHeight,\
                    threshold = None, distance=240)
+                contour_heights = None
+   
+   
 
-            forecastDf.loc[:, 'Peak'] =0;
-
-            #forecastDf.loc[0:0, 'Peak'] =1;
-            #forecastDf.loc[len(forecastDf) -1:, 'Peak'] =1;
-
-            if (len(peaks_positive) > 0):
-                forecastDf.loc[peaks_positive, 'Peak'] = 1
-            
-            #if (len(peaks_negative)>0):
-            #    forecastDf.loc[peaks_negative, 'Peak'] = -1
-            #plt.figure(figsize = (800, 1800))
-            #contour_heights = series[peaks_positive] - prominences
-            #plt.plot(series)
-            #plt.plot(peaks_positive, series[peaks_positive], "x")
-            #plt.vlines(x=peaks_positive, ymin=contour_heights, ymax=series[peaks_positive])
-            #plt.show()
-            #forecastDf.set_index('timestamp', inplace=True) 
-            ##plt.figure(figsize = (80, 80))
-            #plt.plot_date(forecastDf.index, forecastDf.HrlyForecstLoad  / forecastDf.ForecstNumReads, linewidth = 2)
-
-            #plt.plot_date(forecastDf.index[peaks_positive], forecastDf.HrlyForecstLoad[peaks_positive] / forecastDf.ForecstNumReads[peaks_positive], 'ro', label = 'positive peaks')
-            #plt.plot_date(forecastDf.index[peaks_negative], forecastDf.HrlyForecstLoad[peaks_negative] / forecastDf.ForecstNumReads[peaks_negative], 'go', label = 'negative peaks')
- 
-            #plt.xlabel('timestamp')
-            #plt.ylabel('Load Forecast (MW)')
-            ##plt.legend(loc = 4)
-            #plt.show()
-
-            #forecastDf.reset_index(inplace=True)
         except Exception as e:
             print("peakSignal",e)
         finally:
            
-            return forecastDf
+            return forecastDf, contour_heights
 
 
 
@@ -101,15 +97,16 @@ class GridCPShaving(object):
                 connection = isoHelper.engine.connect()
 
                 result = connection.execute("update " + DataTbl + " set Peak = 0")
+               
+
 
                 connection.close()
-
 
             periodTimeStamp = startTimeStamp
 
             while (periodTimeStamp < endTimeStamp):
 
-                periodTimeStamp = periodTimeStamp + timedelta(hours = 24*30)
+                periodTimeStamp = periodTimeStamp + timedelta(hours = 24*5)
 
                 if (periodTimeStamp > endTimeStamp):
                     periodTimeStamp = endTimeStamp
@@ -137,18 +134,19 @@ class GridCPShaving(object):
                 forecastDf.reset_index(drop =True, inplace=True)
 
 
-                forecastDf = self.peakSignal(forecastDf, Area, isHrly)
-
+                forecastDf, peakProminence = self.peakSignal(forecastDf, Area, isHrly)
                 forecastDf = forecastDf[forecastDf['timestamp'] >= oldestTimestamp]
 
                 if (len(forecastDf) > 0):
                     isoHelper.replaceDf(DataTbl, forecastDf)
 
-                if ((isIncremental == True) and (isHrly==True)):
+                if ((isHrly==True)):
 
                     peakDf = forecastDf[forecastDf['Peak'] > 0]
 
                     if (len(peakDf) > 0):
+                        peakDf.insert(len(peakDf.columns), 'Prominence',peakProminence)
+
 
                         sql_query = "SELECT [timestamp] ,[ForecstNumReads],[HrlyForecstLoad],[Peak],[EvaluatedAt],\
                                  [Area],[IsActive] ,[InitialTimestamp],[PeakStart],[PeakEnd], Overtime \
@@ -178,10 +176,12 @@ class GridCPShaving(object):
 
                             newPeaks["Area"]=Area
                             newPeaks["PeakEnd"] = peakDf["timestamp"]
+                            newPeaks["EvaluatedAt"] = peakDf["EvaluatedAt"] 
                             newPeaks["IsActive"] = True
                             newPeaks["Overtime"] = newPeaks["PeakEnd"] 
                             newPeaks["InitialTimestamp"] = newPeaks["EvaluatedAt"] 
-                        
+                            newPeaks["Prominence"] = peakDf["Prominence"]
+
                             for timestamp in newPeaks['timestamp']:
 
                                 EvalAt = newPeaks.loc[newPeaks.timestamp == timestamp, 'EvaluatedAt']
@@ -280,7 +280,6 @@ class GridCPShaving(object):
             
             numIncorrectPeaks = connection.execute("SELECT COUNT(*) FROM " + forecastTbl + " where Peak=3").scalar()
 
-            print("Area isHrly",Area, isHrly, numIncorrectPeaks)
 
         except BaseException as e:
             print("checkPeaks",e)
@@ -308,7 +307,6 @@ class GridCPShaving(object):
             
             numIncorrectPeaks = connection.execute("SELECT COUNT(*) FROM " + forecastTbl + " where Peak=3").scalar()
 
-            print("Area isHrly",Area, isHrly, numIncorrectPeaks)
 
         except BaseException as e:
             print("checkPeaks",e)

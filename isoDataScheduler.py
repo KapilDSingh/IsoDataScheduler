@@ -44,7 +44,7 @@ def main():
     GCPShave = GridCPShaving()
 
     isoHelper.emptyAllTbls()
-    oldestTimeStamp = datetime(2020,12,1)
+    oldestTimeStamp = datetime(2020,1,1)
 
     meterData.fetchMeterData('550001081', 1000, isoHelper)
     currentDate =datetime.today();
@@ -52,12 +52,12 @@ def main():
     startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
     endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
    
-    dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
-    dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
+    #dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
+    #dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
 
     #meterData.genHist('9214411', isoHelper)
-    dataMiner.genPSEGLoadHist(isoHelper)
-    dataMiner.genRTOLoadHist(isoHelper)
+    #dataMiner.genPSEGLoadHist(isoHelper)
+    #dataMiner.genRTOLoadHist(isoHelper)
    
     #rng.strftime('%B %d, %Y, %r')
     i=1
