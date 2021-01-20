@@ -24,7 +24,7 @@ class GridCPShaving(object):
 
             else:
                 maxLoadHeight = 45000
-                prominenceHgt = 100
+                prominenceHgt = 45
 
             if (isHrly == True):
                 divisor = forecastDf.ForecstNumReads
@@ -88,19 +88,18 @@ class GridCPShaving(object):
         forecastDf = None
 
         try:
+            connection = isoHelper.engine.connect()
 
             startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(Area, isHrly)
 
             if (isIncremental == True):
                 startTimeStamp = endTimeStamp - timedelta(hours = 24)
             else:
-                connection = isoHelper.engine.connect()
 
                 result = connection.execute("update " + DataTbl + " set Peak = 0")
                
 
 
-                connection.close()
 
             periodTimeStamp = startTimeStamp
 
@@ -155,18 +154,30 @@ class GridCPShaving(object):
 
                         prevPeakDf = pd.read_sql_query(sql_query, isoHelper.engine)    
                         prevPeakDf.reset_index(drop=True,inplace=True)
-                        
+                        print("***********************findPeaks************")
+                        print("peakDf = ", peakDf)
+                        print("prevPeakDf = ", prevPeakDf)
+
                         dfMerge =pd.merge(peakDf,prevPeakDf,on=['timestamp','timestamp'],how="outer",indicator=True)
                         
                         inactivePeaks = dfMerge[dfMerge['_merge']=='right_only']
                         newPeaks = dfMerge[dfMerge['_merge']=='left_only']
                         bothPeaks =  dfMerge[dfMerge['_merge']=='both']
+                        print ("inactivePeaks=", inactivePeaks)
+                        print ("newPeaks=", newPeaks)
+                        print ("bothPeaks=", bothPeaks)
 
                         for timestamp in inactivePeaks['timestamp']:
-                            sql_query = "update peakTable set IsActive = 'false' where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "'"
+                            sql_query = "update peakTable set IsActive = 'false' where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
+                            result = connection.execute(sql_query)
 
                         for timestamp in bothPeaks['timestamp']:
-                            sql_query = "update peakTable set EvaluatedAt = peakDf.loc['timestamp', 'EvaluatedAt'] where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "'"
+
+                            EvalAt = peakDf.loc[peakDf.timestamp == timestamp, 'EvaluatedAt']
+
+                            sql_query = "update peakTable set EvaluatedAt = '" + EvalAt.iloc[0].strftime("%Y-%m-%dT%H:%M:%S") + \
+                                "' where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
+                            result = connection.execute(sql_query)
                         
                         newPeaks.reset_index(drop=True,inplace=True)
                         peakDf.reset_index(drop=True,inplace=True)
@@ -202,6 +213,9 @@ class GridCPShaving(object):
         except BaseException as e:
             print("findPeaks",e)
         finally:
+
+            connection.close()
+
             return forecastDf
 
     def CheckCPShaveHour(self, Area, forecastDf, isoHelper):

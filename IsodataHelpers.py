@@ -98,7 +98,7 @@ class IsodataHelpers(object):
     def emptyAllTbls(self):
 
         connection = self.engine.connect()
-        result = connection.execute("delete from peakTable")
+        #result = connection.execute("delete from peakTable")
         #result = connection.execute("delete from lmpTbl")
         #result = connection.execute("delete from loadTbl")
         #result = connection.execute("delete from psInstLoadTbl")
