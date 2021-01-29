@@ -98,7 +98,7 @@ class IsodataHelpers(object):
     def emptyAllTbls(self):
 
         connection = self.engine.connect()
-        #result = connection.execute("delete from peakTable")
+        result = connection.execute("delete from peakTable")
         #result = connection.execute("delete from lmpTbl")
         #result = connection.execute("delete from loadTbl")
         #result = connection.execute("delete from psInstLoadTbl")
@@ -118,7 +118,7 @@ class IsodataHelpers(object):
         try:
             oldestTimestamp =loadDf['timestamp'].min()
                 
-            loadDf, load, td_minutes = self.getHrlyLoad(isForecast, oldestTimestamp, instTbl)
+            loadDf = self.getHrlyLoad(isForecast, oldestTimestamp, instTbl)
 
             loadDf.reset_index(drop=True,inplace=True)
             loadDf.set_index('timestamp', inplace=True) 
@@ -164,24 +164,14 @@ class IsodataHelpers(object):
             EndTimeStr = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
             
             instLoadTblQuery = "SELECT * FROM " + DataTbl + " where timestamp  > CONVERT(DATETIME,'" + HrStartTimeStr + "')"
-                
-            if (isForecast == True):
-                loadDf = pd.read_sql(instLoadTblQuery,self.engine)
-                load = loadDf["LoadForecast"].mean()
-
-            else:
-               instLoadTblQuery = instLoadTblQuery + "and timestamp  <= CONVERT(DATETIME,'" + EndTimeStr + "')"
-               loadDf = pd.read_sql(instLoadTblQuery,self.engine)
-               load = loadDf["Load"].mean()
-
-            td = timestamp - startTimestamp
-            td_minutes = td.total_seconds() / 60.00
+            loadDf = pd.read_sql(instLoadTblQuery,self.engine)
+              
 
         except BaseException as e:
             print("getHrlyLoad ",e)
   
         finally:
-            return loadDf, load, td_minutes
+            return loadDf
 
  
     def saveLoadDf(self, Area, isForecast, loadDf):
@@ -216,8 +206,7 @@ class IsodataHelpers(object):
   
         finally:
             return ret
-
-    def CheckPeakEnd(self, timestamp, Area):
+def CheckPeakEnd(self, timestamp, Area):
 
         try:
             if (Area == 'ps'):
@@ -264,6 +253,7 @@ class IsodataHelpers(object):
   
         finally:
             return result
+
 
 
 
@@ -483,17 +473,17 @@ class IsodataHelpers(object):
 
             mergedDf = dfHrlyConsumptionLoad.join(dfPsHrlyLoad, how='outer')\
                         .join(dfPsHrlyVeryShortForecast, how='outer')
-            
+        
             #x = mergedDf['psNumReads'] + mergedDf['ForecstNumReads']
             #y = x[x == 12].index.tolist()
             
             #if (len(y) > 0 and (len(mergedDf) < 10)) or max(mergedDf['psNumReads']) == 12:
           
             mergedDf.reset_index(inplace=True)
-
+            print(mergedDf['HrlyInstLoad'])
             #self.clearTbl(startTimeStamp, 'PSEGHrlyLoadsTbl')
 
-            mergedDf = mergedDf.sort_values('timestamp').drop_duplicates('timestamp',keep='last')
+            mergedDf = mergedDf.sort_values('timestamp')
 
             #self.saveDf('PSEGHrlyLoadsTbl', mergedDf)
             self.replaceDf('PSEGHrlyLoadsTbl', mergedDf)

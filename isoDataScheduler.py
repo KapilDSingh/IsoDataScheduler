@@ -44,13 +44,13 @@ def main():
     GCPShave = GridCPShaving()
 
     isoHelper.emptyAllTbls()
-    oldestTimeStamp = datetime(2020,1,1)
+    oldestTimeStamp = datetime(2020,12,15)
 
     meterData.fetchMeterData('550001081', 1000, isoHelper)
     currentDate =datetime.today();
     eastern = timezone('US/Eastern')
-    startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
-    endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
+    #startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
+    #endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
    
     #dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
     #dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
@@ -61,9 +61,13 @@ def main():
    
     #rng.strftime('%B %d, %Y, %r')
     i=1
+    dataMiner.fetch_YrHrlyEvalLoadForecast('ps', isoHelper)
+    dataMiner.fetch_YrHrlyEvalLoadForecast('RTO', isoHelper)
+
+    
     dataMiner.fetch_LMP(8640, isoHelper)
-    dataMiner.fetch_InstantaneousLoad(8640, 'ps',isoHelper)
-    dataMiner.fetch_InstantaneousLoad(8640, 'PJM RTO',isoHelper)
+    dataMiner.fetch_InstantaneousLoad(18640, 'ps',isoHelper)
+    dataMiner.fetch_InstantaneousLoad(18640, 'PJM RTO',isoHelper)
 
     dataMiner.fetch_GenFuel(528, isoHelper)
 

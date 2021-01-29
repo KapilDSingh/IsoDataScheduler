@@ -92,7 +92,6 @@ class DataMiner(object):
 
             if ((numRows ==1) and  ret==True) :
                 timestamp = loadDf.loc[0, 'timestamp']
-                #isoHelper.CheckPeakEnd(timestamp, Area)
 
                 mergeDt = loadDf['timestamp'][0]
                 mergeDt = mergeDt.replace(minute=mergeDt.minute-0)
@@ -220,31 +219,31 @@ class DataMiner(object):
         try:
             if (Area == 'ps'):
                 AreaCode = 'pse&g/midatl'
-            else:
+            elif (Area == 'RTO'):
                 AreaCode = 'RTO_COMBINED'
 
             currentDate =datetime.today();
             eastern = timezone('US/Eastern')
-            startTime =  datetime(currentDate.year-1, currentDate.month, 1, tzinfo=eastern)
-            endTime =  datetime(currentDate.year, currentDate.month, 1, tzinfo=eastern)
-          
+            startTime =  datetime(currentDate.year, 1,24, tzinfo=eastern)
+            endTime =  datetime(currentDate.year, currentDate.month, 25, tzinfo=eastern)
+            #startTime = startTime.time.hour =0
+            #startTime = startTime.time.minute =0
+            #startTime = startTime.time.microsecond =0
+
             periodTime = startTime
-            startTimeStr = startTime.strftime("%Y-%m-%dT%H:%M:%S")
 
             while (periodTime < endTime):
 
-                periodTime = periodTime + timedelta(hours =1)
+                periodTime = periodTime + timedelta(minutes =5)
+                periodTimeStr = periodTime.strftime("%Y-%m-%dT%H:%M:%S")
 
                 if (periodTime > endTime):
                     periodTime = endTime
             
-                startTimeStr = startTime.strftime("%Y-%m-%dT%H:%M:%S")
-                endTimeStr = periodTime.strftime("%Y-%m-%dT%H:%M:%S")
-
                 params = urllib.parse.urlencode({
                 # Request parameters
    
-                'rowCount': '50000',
+                'rowCount': '1',
                 'sort': 'evaluated_at_ept',
                 'order': 'asc',
                 'startRow': '1',
@@ -252,8 +251,8 @@ class DataMiner(object):
     
                 'fields': 'evaluated_at_ept,forecast_datetime_beginning_ept,forecast_area, forecast_load_mw',
    
-                'evaluated_at_ept': startTimeStr,
-                
+                'evaluated_at_ept': periodTimeStr + " to " + periodTimeStr,
+                'forecast_datetime_beginning_ept':periodTimeStr + " to " + periodTimeStr,
                 'forecast_area': AreaCode,
                 'format':'json'})
 
@@ -262,26 +261,29 @@ class DataMiner(object):
                 jsonData = json.loads(r.data)
 
                 jsonExtractData = jsonData['items']
-                forecastDf = pd.DataFrame(jsonExtractData)
 
-                forecastDf.reset_index(drop=True, inplace= True)
+                if (len(jsonExtractData) > 0):
+
+                    forecastDf = pd.DataFrame(jsonExtractData)
+
+                    forecastDf.reset_index(drop=True, inplace= True)
             
            
-                forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", \
-                    "evaluated_at_ept": "EvaluatedAt", "forecast_area":"Area","forecast_load_mw": "LoadForecast"},inplace =True)
+                    forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", \
+                        "evaluated_at_ept": "EvaluatedAt", "forecast_area":"Area","forecast_load_mw": "LoadForecast"},inplace =True)
             
-                forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
-                forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
+                    forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
+                    forecastDf['timestamp'] = pd.to_datetime(forecastDf['timestamp'])
 
-                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'].values).strftime('%Y-%m-%d %H:%M:%S')
-                forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'])
-               
-                forecastDf['Peak'] = 0 
-                startTime = periodTime
-                isoHelper.saveDf(DataTbl='hrlyEvalForecastTbl', Data= forecastDf)
+                    forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'].values).strftime('%Y-%m-%d %H:%M:%S')
+                    forecastDf['EvaluatedAt'] = pd.to_datetime(forecastDf['EvaluatedAt'])
+                    forecastDf['Area'] = Area
+                    forecastDf['Peak'] = 0 
+
+                    isoHelper.saveLoadDf(Area, True, forecastDf);
  
         except Exception as e:
-                print("fetch_LoadForecast",e)
+                print("fetch_YrHrlyEvalLoadForecast",e)
         finally:
                 return
 
