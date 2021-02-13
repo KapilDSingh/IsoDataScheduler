@@ -27,7 +27,7 @@ function global:deactivate ([switch]$NonDestructive) {
 
 deactivate -nondestructive
 
-$env:VIRTUAL_ENV="C:\Users\Administrator\source\repos\IsoDataScheduler\env"
+$env:VIRTUAL_ENV="C:\Users\Kapil\Source\Repos\IsoDataScheduler\env"
 
 if (! $env:VIRTUAL_ENV_DISABLE_PROMPT) {
     # Set the prompt to include the env name
