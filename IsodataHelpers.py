@@ -206,7 +206,8 @@ class IsodataHelpers(object):
   
         finally:
             return ret
-def CheckPeakEnd(self, timestamp, Area):
+    
+    def CheckPeakEnd(self, timestamp, Area):
 
         try:
             if (Area == 'ps'):
