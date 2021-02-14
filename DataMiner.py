@@ -222,13 +222,9 @@ class DataMiner(object):
             elif (Area == 'RTO'):
                 AreaCode = 'RTO_COMBINED'
 
-            currentDate =datetime.today();
             eastern = timezone('US/Eastern')
-            startTime =  datetime(currentDate.year, 1,24, tzinfo=eastern)
-            endTime =  datetime(currentDate.year, currentDate.month, 25, tzinfo=eastern)
-            #startTime = startTime.time.hour =0
-            #startTime = startTime.time.minute =0
-            #startTime = startTime.time.microsecond =0
+            endTime =datetime.now(eastern);
+            startTime =  datetime(endTime.year, endTime.month, endTime.day-1, tzinfo=eastern)
 
             periodTime = startTime
 

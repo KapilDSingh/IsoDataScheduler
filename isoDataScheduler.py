@@ -44,7 +44,7 @@ def main():
     GCPShave = GridCPShaving()
 
     isoHelper.emptyAllTbls()
-    oldestTimeStamp = datetime(2020,12,15)
+    oldestTimeStamp = datetime(2020,2,1)
 
     meterData.fetchMeterData('550001081', 1000, isoHelper)
     currentDate =datetime.today();
@@ -66,8 +66,8 @@ def main():
 
     
     dataMiner.fetch_LMP(8640, isoHelper)
-    dataMiner.fetch_InstantaneousLoad(18640, 'ps',isoHelper)
-    dataMiner.fetch_InstantaneousLoad(18640, 'PJM RTO',isoHelper)
+    dataMiner.fetch_InstantaneousLoad(8640, 'ps',isoHelper)
+    dataMiner.fetch_InstantaneousLoad(8640, 'PJM RTO',isoHelper)
 
     dataMiner.fetch_GenFuel(528, isoHelper)
 

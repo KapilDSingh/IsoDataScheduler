@@ -63,7 +63,13 @@ class GridCPShaving(object):
                 peaks_positive, _ = scipy.signal.find_peaks(forecastDf.LoadForecast, height = maxLoadHeight,\
                    threshold = None, distance=240)
                 contour_heights = None
-   
+
+                forecastDf.loc[:, 'Peak'] =0;
+
+                if (len(peaks_positive) > 0):
+                    forecastDf.loc[peaks_positive, 'Peak'] = 1
+                
+
    
 
         except Exception as e:
@@ -139,7 +145,7 @@ class GridCPShaving(object):
                 if (len(forecastDf) > 0):
                     isoHelper.replaceDf(DataTbl, forecastDf)
 
-                if ((isHrly==True)):
+                if ((isHrly==True) and (isIncremental)):
 
                     peakDf = forecastDf[forecastDf['Peak'] > 0]
 
