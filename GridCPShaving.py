@@ -101,9 +101,14 @@ class GridCPShaving(object):
             if (isIncremental == True):
                 startTimeStamp = endTimeStamp - timedelta(hours = 24)
             else:
+                startTimeStamp = oldestTimestamp
+                startTimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+                endTimeStr = endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
 
-                result = connection.execute("update " + DataTbl + " set Peak = 0")
+                sql_query = "update " + DataTbl + " set Peak = 0" + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + \
+                    "')  and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')"
                
+                result = connection.execute(sql_query)
 
 
 
