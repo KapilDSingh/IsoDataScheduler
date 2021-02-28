@@ -31,7 +31,7 @@ class GridCPShaving(object):
                 series = forecastDf.HrlyForecstLoad   / divisor
                 # find all the peaks that associated with the positive peaks
                 peaks_positive, _ = find_peaks(series, height = maxLoadHeight, prominence = prominenceHgt, \
-                                               threshold = None, distance=20)
+                                               threshold = None, distance=24)
                 ## find all the peaks that associated with the negative peaks
                 #peaks_negative, _ = scipy.signal.find_peaks(-forecastDf.HrlyForecstLoad \
                 #   / divisor, height = minLoadHeight, threshold = None, distance=10)
@@ -90,7 +90,6 @@ class GridCPShaving(object):
         elif (Area == 'PJM RTO') and isHrly == True:
             DataTbl = 'rtoHrlyForecstTbl'
 
-
         forecastDf = None
 
         try:
@@ -99,18 +98,22 @@ class GridCPShaving(object):
             startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(Area, isHrly)
 
             if (isIncremental == True):
-                startTimeStamp = endTimeStamp - timedelta(hours = 24)
-            else:
-                startTimeStamp = oldestTimestamp
-                startTimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
-                endTimeStr = endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+                startTimeStamp = endTimeStamp.replace(hour = 0, minute=0, second = 0, microsecond =0)
+                
+                if (startTimeStamp == endTimeStamp):
+                    startTimeStamp -= timedelta(hours=24)                
 
-                sql_query = "update " + DataTbl + " set Peak = 0" + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + \
-                    "')  and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')"
+
+            #else:
+            #    startTimeStamp = oldestTimestamp
+
+            startTimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+            endTimeStr = endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+
+            sql_query = "update " + DataTbl + " set Peak = 0" + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + \
+                "')  and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')"
                
-                result = connection.execute(sql_query)
-
-
+            result = connection.execute(sql_query)
 
             periodTimeStamp = startTimeStamp
 
@@ -145,7 +148,6 @@ class GridCPShaving(object):
 
 
                 forecastDf, peakProminence = self.peakSignal(forecastDf, Area, isHrly)
-                forecastDf = forecastDf[forecastDf['timestamp'] >= oldestTimestamp]
 
                 if (len(forecastDf) > 0):
                     isoHelper.replaceDf(DataTbl, forecastDf)

@@ -60,35 +60,35 @@ def main():
     #dataMiner.genRTOLoadHist(isoHelper)
    
     #rng.strftime('%B %d, %Y, %r')
-    i=1
-    dataMiner.fetch_YrHrlyEvalLoadForecast('ps', isoHelper)
-    dataMiner.fetch_YrHrlyEvalLoadForecast('RTO', isoHelper)
+    #i=1
+    #dataMiner.fetch_YrHrlyEvalLoadForecast('ps', isoHelper)
+    #dataMiner.fetch_YrHrlyEvalLoadForecast('RTO', isoHelper)
 
     
-    dataMiner.fetch_LMP(8640, isoHelper)
-    dataMiner.fetch_InstantaneousLoad(8640, 'ps',isoHelper)
-    dataMiner.fetch_InstantaneousLoad(8640, 'PJM RTO',isoHelper)
+    #dataMiner.fetch_LMP(8640, isoHelper)
+    #dataMiner.fetch_InstantaneousLoad(8640, 'ps',isoHelper)
+    #dataMiner.fetch_InstantaneousLoad(8640, 'PJM RTO',isoHelper)
 
-    dataMiner.fetch_GenFuel(528, isoHelper)
+    #dataMiner.fetch_GenFuel(528, isoHelper)
 
     
-    dataMiner.fetch_LoadForecast( 'ps', isoHelper, GCPShave)
-    dataMiner.fetch_LoadForecast('PJM RTO', isoHelper, GCPShave)
+    #dataMiner.fetch_LoadForecast( 'ps', isoHelper, GCPShave)
+    #dataMiner.fetch_LoadForecast('PJM RTO', isoHelper, GCPShave)
     ##dataMiner.fetch_7dayLoadForecast(True, isoHelper)
     
 
-    GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
-    GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', False, False, isoHelper)
-    GCPShave.findPeaks(oldestTimeStamp,  'ps', True, False, isoHelper)
-    GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
-    GCPShave.checkPeaks('ps', True, isoHelper)
-    GCPShave.checkPeaks('PJM RTO', True, isoHelper)
+    #GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
+    #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', False, False, isoHelper)
+    #GCPShave.findPeaks(oldestTimeStamp,  'ps', True, False, isoHelper)
+    #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
+    #GCPShave.checkPeaks('ps', True, isoHelper)
+    #GCPShave.checkPeaks('PJM RTO', True, isoHelper)
 
 
-    isoHelper.mergePSEGTimeSeries(oldestTimeStamp)
-    isoHelper.mergeRTOTimeSeries(oldestTimeStamp)
-    isoHelper.mergePSEGHrlySeries(oldestTimeStamp)
-    isoHelper.mergeRTOHrlySeries(oldestTimeStamp)
+    #isoHelper.mergePSEGTimeSeries(oldestTimeStamp)
+    #isoHelper.mergeRTOTimeSeries(oldestTimeStamp)
+    #isoHelper.mergePSEGHrlySeries(oldestTimeStamp)
+    #isoHelper.mergeRTOHrlySeries(oldestTimeStamp)
 
 
 
