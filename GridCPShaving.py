@@ -98,14 +98,13 @@ class GridCPShaving(object):
             startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(Area, isHrly)
 
             if (isIncremental == True):
-                startTimeStamp = endTimeStamp.replace(hour = 0, minute=0, second = 0, microsecond =0)
-                
-                if (startTimeStamp == endTimeStamp):
-                    startTimeStamp -= timedelta(hours=24)                
+                startTimeStamp = oldestTimestamp.replace(hour = 0, minute=0, second = 0, microsecond =0)
+                dayEndTimeStamp = startTimeStamp +timedelta(hours=24)   
+                if (endTimeStamp  > dayEndTimeStamp):
+                    endTimeStamp = dayEndTimeStamp             
 
-
-            #else:
-            #    startTimeStamp = oldestTimestamp
+            else:
+                startTimeStamp = oldestTimestamp
 
             startTimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
             endTimeStr = endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
@@ -163,7 +162,7 @@ class GridCPShaving(object):
                         sql_query = "SELECT [timestamp] ,[ForecstNumReads],[HrlyForecstLoad],[Peak],[EvaluatedAt],\
                                  [Area],[IsActive] ,[InitialTimestamp],[PeakStart],[PeakEnd], Overtime \
                                  FROM [ISODB].[dbo].[peakTable] where Area = '" + Area + "' \
-                                and  timestamp >= '" + oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S") + "'"
+                                and  timestamp >= '" + startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S") + "'"
 
                         prevPeakDf = pd.read_sql_query(sql_query, isoHelper.engine)    
                         prevPeakDf.reset_index(drop=True,inplace=True)
