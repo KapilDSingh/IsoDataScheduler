@@ -258,26 +258,24 @@ class IsodataHelpers(object):
 
 
 
-    def getMaxLoadforTimePeriod(self, oldestTimestamp, Area):
+    def getMaxLoadforTimePeriod(self, endTimeStamp, Area):
 
         df = None
-        endTime =  oldestTimestamp 
 
         eastern = timezone('US/Eastern')
 
         if (Area == 'ps') :
             DataTbl = 'psHrlyForecstTbl'
-            startTime = datetime(oldestTimestamp.year, oldestTimestamp.month, 1, tzinfo=eastern)
+            startTime = datetime(endTimeStamp.year, endTimeStamp.month, 1, tzinfo=eastern)
             numPoints = 1
         elif (Area == 'PJM RTO'):
             DataTbl = 'rtoHrlyForecstTbl'
-            startTime =  datetime(oldestTimestamp.year, 6, 1, tzinfo=eastern)
+            startTime =  datetime(endTimeStamp.year, 1, 1, tzinfo=eastern)
             numPoints = 6
 
         try:
-       
             startTimeStr = startTime.strftime("%Y-%m-%dT%H:%M:%S")
-            endTimeStr = endTime.strftime("%Y-%m-%dT%H:%M:%S")
+            endTimeStr = endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
 
             sql_query = "SELECT  TOP (" + str(numPoints) + ") [timestamp] \
                 ,[ForecstNumReads]\
@@ -287,8 +285,6 @@ class IsodataHelpers(object):
                 FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
                 and timestamp < CONVERT(DATETIME,'" + endTimeStr + "')" + " order by MaxLoad desc"
   
-
-
             df = pd.read_sql_query(sql_query, self.engine) 
 
         except BaseException as e:
