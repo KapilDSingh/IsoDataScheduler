@@ -125,13 +125,13 @@ class GridCPShaving(object):
                             ,[Peak]\
                             ,[EvaluatedAt]\
                             FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                            and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
+                            and timestamp < CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
                 else:
                     sql_query = "SELECT  [timestamp] \
                             ,[LoadForecast]\
                             ,[EvaluatedAt] ,[Area],[Peak]\
                             FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                            and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
+                            and timestamp < CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
 
 
                 forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
@@ -144,14 +144,13 @@ class GridCPShaving(object):
 
                 if (len(peakDf) > 0):
 
-                    if ((isHrly==True) and (isIncremental)):
+                    if ((isHrly==True)):
 
                         peakDf = forecastDf[forecastDf['Peak'] > 0]
 
                         if (len(peakDf) > 0):
 
                             peakDf.insert(len(peakDf.columns), 'Prominence',peakProminence)
-
 
                             sql_query = "SELECT [timestamp] ,[ForecstNumReads],[HrlyForecstLoad],[Peak],[EvaluatedAt],\
                                      [Area],[IsActive] ,[InitialTimestamp],[PeakStart],[PeakEnd], Overtime \
@@ -209,11 +208,10 @@ class GridCPShaving(object):
                                 
                                 res = isoHelper.saveDf("peakTable", newPeaks)
 
-
-                        forecastDf = self.CheckCPShaveHour(Area,startTimeStamp, endTimeStamp, forecastDf, isoHelper)
-
                     isoHelper.replaceDf(DataTbl, forecastDf)
 
+                    forecastDf = self.CheckCPShaveHour(Area,startTimeStamp, periodTimeStamp, forecastDf, isoHelper)
+                    isoHelper.replaceDf(DataTbl, forecastDf)
 
 
                 startTimeStamp = periodTimeStamp
@@ -233,12 +231,10 @@ class GridCPShaving(object):
             CandidateDf = isoHelper.getMaxLoadforTimePeriod(endTimeStamp, Area)
 
             dfMerge =pd.merge(CandidateDf,forecastDf,on=['timestamp','timestamp'],how="inner",indicator=False)
-            dfMerge.timestamp = forecastDf.timestamp
+            
             forecastDf.reset_index(drop =True, inplace=True)
             for timestamp in dfMerge['timestamp']:
-                pkVal = forecastDf.loc[forecastDf.timestamp == timestamp, 'Peak']
-                if (pkVal.iloc[0] == 1):
-                    forecastDf.loc[forecastDf.timestamp == timestamp, 'Peak'] = 2
+                forecastDf.loc[forecastDf.timestamp == timestamp, 'Peak'] = 2
 
         except BaseException as e:
             print("CheckCPShaveHour",e)

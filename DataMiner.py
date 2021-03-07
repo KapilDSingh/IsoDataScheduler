@@ -215,7 +215,7 @@ class DataMiner(object):
         finally:
                 return
 
-    def fetch_YrHrlyEvalLoadForecast(self, Area, isoHelper):
+    def fetch_YrHrlyEvalLoadForecast(self, oldestTimeStamp, Area, isoHelper):
         try:
             if (Area == 'ps'):
                 AreaCode = 'pse&g/midatl'
@@ -223,8 +223,8 @@ class DataMiner(object):
                 AreaCode = 'RTO_COMBINED'
 
             eastern = timezone('US/Eastern')
-            endTime =datetime.now(eastern);
-            startTime =  datetime(endTime.year, endTime.month, endTime.day-1, tzinfo=eastern)
+            endTime =datetime.now();
+            startTime =  oldestTimeStamp
 
             periodTime = startTime
 

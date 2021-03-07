@@ -266,11 +266,11 @@ class IsodataHelpers(object):
 
         if (Area == 'ps') :
             DataTbl = 'psHrlyForecstTbl'
-            startTime = datetime(endTimeStamp.year, endTimeStamp.month, 1, tzinfo=eastern)
+            startTime = datetime(endTimeStamp.year, endTimeStamp.month, 1)
             numPoints = 1
         elif (Area == 'PJM RTO'):
             DataTbl = 'rtoHrlyForecstTbl'
-            startTime =  datetime(endTimeStamp.year, 1, 1, tzinfo=eastern)
+            startTime =  datetime(endTimeStamp.year, 3, 1)
             numPoints = 6
 
         try:
@@ -283,10 +283,10 @@ class IsodataHelpers(object):
                 ,[Peak]\
                 ,[HrlyForecstLoad]/NULLIF([ForecstNumReads],0) as MaxLoad \
                 FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                and timestamp < CONVERT(DATETIME,'" + endTimeStr + "')" + " order by MaxLoad desc"
+                and timestamp < CONVERT(DATETIME,'" + endTimeStr + "') and (Peak =1 or Peak = 2)" + " order by MaxLoad desc"
   
             df = pd.read_sql_query(sql_query, self.engine) 
-
+            print("Max Loads Df", df, Area)
         except BaseException as e:
 
             print("getMaxLoadforTimePeriod",e)
@@ -669,7 +669,9 @@ class IsodataHelpers(object):
             DataTbl = 'rtoHrlyForecstTbl'
 
         df = None
-         
+        eastern = timezone('US/Eastern')
+
+
         try:
             sql_query = "select top 1 timestamp from " + DataTbl + " order by timestamp "
 
