@@ -210,8 +210,9 @@ class GridCPShaving(object):
 
                     isoHelper.replaceDf(DataTbl, forecastDf)
 
-                    forecastDf = self.CheckCPShaveHour(Area,startTimeStamp, periodTimeStamp, forecastDf, isoHelper)
-                    isoHelper.replaceDf(DataTbl, forecastDf)
+                    if ((isHrly==True)):
+                        forecastDf = self.CheckCPShaveHour(Area,startTimeStamp, periodTimeStamp, forecastDf, isoHelper)
+                        isoHelper.replaceDf(DataTbl, forecastDf)
 
 
                 startTimeStamp = periodTimeStamp
