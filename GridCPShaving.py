@@ -177,15 +177,21 @@ class GridCPShaving(object):
                                 result = connection.execute(sql_query)
 
                             for timestamp in bothPeaks['timestamp']:
-
+   
                                 EvalAt = peakDf.loc[peakDf.timestamp == timestamp, 'EvaluatedAt']
 
                                 sql_query = "update peakTable set EvaluatedAt = '" + EvalAt.iloc[0].strftime("%Y-%m-%dT%H:%M:%S") + \
                                     "' where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
                                 result = connection.execute(sql_query)
+                                isActive = connection.execute("SELECT IsActive FROM  peakTable \
+                              where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") +\
+                                   "' and area = '" + Area + "'").scalar()
+                                if (isActive == False):
+                                    sql_query = "update peakTable set IsActive = 'true', InitialTimestamp = '" \
+                                        + EvalAt.iloc[0].strftime("%Y-%m-%dT%H:%M:%S") + "'where timestamp = '" + \
+                                          timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
 
-                                sql_query = "update peakTable set IsActive = 'true' where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
-                                result = connection.execute(sql_query)
+                                    result = connection.execute(sql_query)
 
                         
                             newPeaks.reset_index(drop=True,inplace=True)
