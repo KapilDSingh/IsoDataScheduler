@@ -125,13 +125,13 @@ class GridCPShaving(object):
                             ,[Peak]\
                             ,[EvaluatedAt]\
                             FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                            and timestamp < CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
+                            and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
                 else:
                     sql_query = "SELECT  [timestamp] \
                             ,[LoadForecast]\
                             ,[EvaluatedAt] ,[Area],[Peak]\
                             FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                            and timestamp < CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
+                            and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
 
 
                 forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
@@ -145,10 +145,6 @@ class GridCPShaving(object):
                 if (len(peakDf) > 0):
 
                     if ((isHrly==True)):
-
-                        peakDf = forecastDf[forecastDf['Peak'] > 0]
-
-                        if (len(peakDf) > 0):
 
                             peakDf.insert(len(peakDf.columns), 'Prominence',peakProminence)
 
