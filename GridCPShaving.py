@@ -169,7 +169,7 @@ class GridCPShaving(object):
                             print ("bothPeaks=", bothPeaks)
 
                             for timestamp in inactivePeaks['timestamp']:
-                                sql_query = "update peakTable set IsActive = 'false' where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
+                                sql_query = "delete from  peakTable  where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
                                 result = connection.execute(sql_query)
 
                             for timestamp in bothPeaks['timestamp']:
@@ -179,16 +179,6 @@ class GridCPShaving(object):
                                 sql_query = "update peakTable set EvaluatedAt = '" + EvalAt.iloc[0].strftime("%Y-%m-%dT%H:%M:%S") + \
                                     "' where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
                                 result = connection.execute(sql_query)
-                                isActive = connection.execute("SELECT IsActive FROM  peakTable \
-                              where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") +\
-                                   "' and area = '" + Area + "'").scalar()
-                                if (isActive == False):
-                                    sql_query = "update peakTable set IsActive = 'true', InitialTimestamp = '" \
-                                        + EvalAt.iloc[0].strftime("%Y-%m-%dT%H:%M:%S") + "'where timestamp = '" + \
-                                          timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
-
-                                    result = connection.execute(sql_query)
-
                         
                             newPeaks.reset_index(drop=True,inplace=True)
                             peakDf.reset_index(drop=True,inplace=True)
