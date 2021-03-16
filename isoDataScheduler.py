@@ -47,7 +47,7 @@ def main():
     
     eastern = timezone('US/Eastern')
 
-    oldestTimeStamp = datetime(2021,3,9)
+    oldestTimeStamp = datetime(2021,3,14)
 
     meterData.fetchMeterData('550001081', 1000, isoHelper)
     currentDate =datetime.today();
