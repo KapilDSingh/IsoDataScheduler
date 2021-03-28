@@ -88,10 +88,12 @@ def main():
 
 
 
-    isoHelper.mergePSEGTimeSeries(oldestTimeStamp)
-    isoHelper.mergeRTOTimeSeries(oldestTimeStamp)
-    isoHelper.mergePSEGHrlySeries(oldestTimeStamp)
-    isoHelper.mergeRTOHrlySeries(oldestTimeStamp)
+    oldestMergeTimeStamp =  datetime.now() - timedelta (days =60)
+
+    isoHelper.mergePSEGTimeSeries(oldestMergeTimeStamp)
+    isoHelper.mergeRTOTimeSeries(oldestMergeTimeStamp)
+    isoHelper.mergePSEGHrlySeries(oldestMergeTimeStamp)
+    isoHelper.mergeRTOHrlySeries(oldestMergeTimeStamp)
 
 
 
