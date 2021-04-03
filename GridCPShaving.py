@@ -96,8 +96,9 @@ class GridCPShaving(object):
             connection = isoHelper.engine.connect()
 
             startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(Area, isHrly)
-            startTimeStamp = oldestTimestamp.replace(hour = 0, minute=0, second = 0, microsecond =0)
+            zeroTimeStamp = oldestTimestamp.replace(hour = 0, minute=0, second = 0, microsecond =0)
 
+            startTimeStamp = zeroTimeStamp
             startTimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
             endTimeStr = endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -205,13 +206,22 @@ class GridCPShaving(object):
                                 res = isoHelper.saveDf("peakTable", newPeaks)
 
                     isoHelper.replaceDf(DataTbl, forecastDf)
-
+                     
+ 
                     if ((isHrly==True)):
                         forecastDf = self.CheckCPShaveHour(Area,startTimeStamp, periodTimeStamp, forecastDf, isoHelper)
                         isoHelper.replaceDf(DataTbl, forecastDf)
 
 
                 startTimeStamp = periodTimeStamp
+
+                if (Area =='ps'):
+                    isoHelper.mergePSEGTimeSeries(zeroTimeStamp)
+                    isoHelper.mergePSEGHrlySeries(zeroTimeStamp)
+                else:
+                    isoHelper.mergeRTOTimeSeries(zeroTimeStamp)
+                    isoHelper.mergeRTOHrlySeries(zeroTimeStamp)
+
  
         except BaseException as e:
             print("findPeaks",e)
