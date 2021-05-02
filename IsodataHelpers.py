@@ -393,11 +393,6 @@ class IsodataHelpers(object):
             dfRtoInstLoad.reset_index(drop=True,inplace=True)
             dfRtoInstLoad.set_index('timestamp', inplace=True) 
 
-            meterTblQuery = "SELECT timestamp, [RMS_Watts_Tot] as ConsumptionLoad FROM meterTbl   where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
-            dfConsumptionLoad = pd.read_sql(meterTblQuery,self.engine)
-            dfConsumptionLoad.reset_index(drop=True,inplace=True)
-            dfConsumptionLoad.set_index('timestamp', inplace=True) 
-
 
             rtoVeryShortForecastQuery = "SELECT timestamp, LoadForecast as [rtoVeryShortForecast], EvaluatedAt, Peak  FROM  rtoForecastTbl where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
             dfRtoVeryShortForecast = pd.read_sql(rtoVeryShortForecastQuery,self.engine)
