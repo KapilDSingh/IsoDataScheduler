@@ -393,10 +393,10 @@ class IsodataHelpers(object):
             dfRtoInstLoad.reset_index(drop=True,inplace=True)
             dfRtoInstLoad.set_index('timestamp', inplace=True) 
 
-            #meterTblQuery = "SELECT timestamp, [RMS_Watts_Tot] as ConsumptionLoad FROM meterTbl   where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
-            #dfConsumptionLoad = pd.read_sql(meterTblQuery,self.engine)
-            #dfConsumptionLoad.reset_index(drop=True,inplace=True)
-            #dfConsumptionLoad.set_index('timestamp', inplace=True) 
+            meterTblQuery = "SELECT timestamp, [RMS_Watts_Tot] as ConsumptionLoad FROM meterTbl   where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
+            dfConsumptionLoad = pd.read_sql(meterTblQuery,self.engine)
+            dfConsumptionLoad.reset_index(drop=True,inplace=True)
+            dfConsumptionLoad.set_index('timestamp', inplace=True) 
 
 
             rtoVeryShortForecastQuery = "SELECT timestamp, LoadForecast as [rtoVeryShortForecast], EvaluatedAt, Peak  FROM  rtoForecastTbl where timestamp >= CONVERT(DATETIME,'" + TimeStr + "')"
@@ -407,21 +407,9 @@ class IsodataHelpers(object):
             dfRtoVeryShortForecast.set_index('timestamp', inplace=True) 
 
 
-            #rtoForecast7dayTblQuery = 'SELECT timestamp, [Weekly Load
-            #Forecast] as rto7DayForecast, EvaluatedAt FROM rtoForecast7dayTbl
-            #where timestamp > ' + startTimeStamp.strftime("%Y-%m-%d")
-            #dfRto7DayForecast=
-            #pd.read_sql(rtoForecast7dayTblQuery,self.engine)
-            #dfRto7DayForecast =
-            #dfRto7DayForecast.sort_values('EvaluatedAt').drop_duplicates('timestamp',keep='last')
-            #del dfRto7DayForecast['EvaluatedAt']
-            #dfRto7DayForecast.reset_index(drop=True,inplace=True)
-            #dfRto7DayForecast.set_index('timestamp', inplace=True)
 
-
-            #mergedDf = dfConsumptionLoad.join(dfRtoInstLoad, how='outer')\
-            mergedDf =dfRtoInstLoad.join(dfRtoVeryShortForecast, how='outer')
-                      #.join(dfRto7DayForecast, how='outer')
+            mergedDf = dfConsumptionLoad.join(dfRtoInstLoad, how='outer')\
+            .join(dfRtoVeryShortForecast, how='outer')
             mergedDf.reset_index(inplace=True)
 
             self.clearTbl(startTimeStamp, 'RtoLoadsTbl')
