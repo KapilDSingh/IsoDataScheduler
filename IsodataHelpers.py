@@ -408,8 +408,7 @@ class IsodataHelpers(object):
 
 
 
-            mergedDf = dfConsumptionLoad.join(dfRtoInstLoad, how='outer')\
-            .join(dfRtoVeryShortForecast, how='outer')
+            mergedDf = dfRtoInstLoad.join(dfRtoVeryShortForecast, how='outer')
             mergedDf.reset_index(inplace=True)
 
             self.clearTbl(startTimeStamp, 'RtoLoadsTbl')
