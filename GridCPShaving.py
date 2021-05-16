@@ -211,7 +211,7 @@ class GridCPShaving(object):
                     if ((isHrly==True)):
                         forecastDf = self.CheckCPShaveHour(Area,startTimeStamp, periodTimeStamp, forecastDf, isoHelper)
                         isoHelper.replaceDf(DataTbl, forecastDf)
-
+                        self.checkPeakEnd(  Area,  periodTimeStamp, isoHelper)
 
                 startTimeStamp = periodTimeStamp
 
@@ -222,7 +222,8 @@ class GridCPShaving(object):
                     isoHelper.mergeRTOTimeSeries(zeroTimeStamp)
                     isoHelper.mergeRTOHrlySeries(zeroTimeStamp)
 
- 
+
+
         except BaseException as e:
             print("findPeaks",e)
         finally:
@@ -242,7 +243,6 @@ class GridCPShaving(object):
             forecastDf.reset_index(drop =True, inplace=True)
             for timestamp in dfMerge['timestamp']:
                 forecastDf.loc[forecastDf.timestamp == timestamp, 'Peak'] = 2
-
         except BaseException as e:
             print("CheckCPShaveHour",e)
         finally:
@@ -250,23 +250,15 @@ class GridCPShaving(object):
 
 
 
-    def checkPeaks(self,  Area, isHrly, isoHelper):
-        if (Area == 'ps') and isHrly == False:
-
-            forecastTbl = 'forecastTbl'
-            DataTbl = 'psInstLoadTbl'
-
-        elif (Area == 'ps') and isHrly == True:
+    def checkPeakEnd(self,  Area, currentTimeStamp, isoHelper):
+        if (Area == 'ps'):
 
             forecastTbl = 'psHrlyForecstTbl'
             DataTbl = 'psHrlyLoadTbl'
 
-        elif (Area == 'PJM RTO') and isHrly == False:
+        
 
-            forecastTbl = 'rtoForecastTbl'
-            DataTbl = 'loadTbl'
-
-        elif (Area == 'PJM RTO') and isHrly == True:
+        elif (Area == 'PJM RTO'):
 
             forecastTbl = 'rtoHrlyForecstTbl'
             DataTbl = 'rtoHrlyLoadTbl'
@@ -274,6 +266,8 @@ class GridCPShaving(object):
         forecastDf = None
 
         try:
+            zeroTimeStamp = currentTimeStamp.replace(hour = 0, minute=0, second = 0, microsecond =0)
+
             sql_query = "Update [ISODB].[dbo]." + forecastTbl + " set Peak=3 where timestamp in "\
                             "(SELECT   [ISODB].[dbo]." + forecastTbl + ".timestamp \
                         FROM  [ISODB].[dbo]." + forecastTbl + " INNER JOIN \
@@ -289,6 +283,23 @@ class GridCPShaving(object):
 
             
             numIncorrectPeaks = connection.execute("SELECT COUNT(*) FROM " + forecastTbl + " where Peak=3").scalar()
+
+            sql_query = "SELECT   t2.timestamp FROM  [ISODB].[dbo]." + DataTbl + " as t1 INNER JOIN  \
+                [ISODB].[dbo]." + DataTbl + " as t2 ON t2.timestamp = DATEADD (hour , -1 ,  t1.timestamp ) INNER JOIN \
+                [ISODB].[dbo]." + forecastTbl + " ON [ISODB].[dbo]." + forecastTbl + ".timestamp = DATEADD (hour , -1 ,  t1.timestamp )\
+                WHERE       ( ([ISODB].[dbo]." + forecastTbl + ".Peak=2) and (t1.HrlyInstLoad/ t1.NumReadsb \
+                > t2.HrlyInstLoad / t2.NumReads) and t2.timestamp > '"+ zeroTimeStamp + "') order by t1.timestamp desc"
+
+
+            ExtendEndTimeStamp = connection.execute(sql_query).scalar()
+
+            if (ExtendEndTimeStamp != null):
+                startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(Area, false)
+                sql_query = "update peakTable set Overtime = '" + endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S") + \
+                    "' where timestamp = '" + ExtendEndTimeStamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
+                result = connection.execute(sql_query)
+
+            
 
 
         except BaseException as e:
