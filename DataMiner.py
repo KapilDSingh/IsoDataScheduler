@@ -32,7 +32,7 @@ class DataMiner(object):
 
     http = urllib3.PoolManager()
 
-    headers = {'Ocp-Apim-Subscription-Key': 'b4d42032ca23403aaa7bb8fb72025614'}
+    headers = {'Ocp-Apim-Subscription-Key': '66e17241413e4462b597005b135e0c79'}
     
     def fetch_LMP(self, numRows, isoHelper):
         try:
