@@ -116,6 +116,8 @@ class IsodataHelpers(object):
     def save_hrly_load(self, isForecast, loadDf,  instTbl, HrlyTbl):     
     
         try:
+            ret = True
+
             oldestTimestamp =loadDf['timestamp'].min()
                 
             loadDf = self.getHrlyLoad(isForecast, oldestTimestamp, instTbl)
@@ -175,7 +177,8 @@ class IsodataHelpers(object):
 
  
     def saveLoadDf(self, Area, isForecast, loadDf):
-        
+        ret = True
+
         try:
             if (isForecast == True):
                 if (Area == 'ps'):

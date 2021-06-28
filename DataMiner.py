@@ -70,8 +70,12 @@ class DataMiner(object):
     def fetch_InstantaneousLoad(self, numRows,  Area, isoHelper):
 
         try:
+            ret = True
 
-            r = self.http.request('GET', 'https://api.pjm.com/api/v1/inst_load?area=' + Area + '&rowCount=' + str(numRows) + '&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,area,instantaneous_load&format=JSON', headers=self.headers)
+            loadReqStr = 'https://api.pjm.com/api/v1/inst_load?area=' + Area + \
+                '&rowCount=' + str(numRows) + '&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,area,\
+                instantaneous_load&format=JSON'
+            r = self.http.request('GET', loadReqStr, headers=self.headers)
             
             jsonData = json.loads(r.data)
 
