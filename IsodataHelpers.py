@@ -286,7 +286,7 @@ class IsodataHelpers(object):
                 and timestamp < CONVERT(DATETIME,'" + endTimeStr + "') " + " order by MaxLoad desc"
   
             df = pd.read_sql_query(sql_query, self.engine) 
-            print("Max Loads Df", df, Area)
+            #print("Max Loads Df", df, Area)
         except BaseException as e:
 
             print("getMaxLoadforTimePeriod",e)
@@ -459,7 +459,6 @@ class IsodataHelpers(object):
             #if (len(y) > 0 and (len(mergedDf) < 10)) or max(mergedDf['psNumReads']) == 12:
           
             mergedDf.reset_index(inplace=True)
-            print(mergedDf['HrlyInstLoad'])
             #self.clearTbl(startTimeStamp, 'PSEGHrlyLoadsTbl')
 
             mergedDf = mergedDf.sort_values('timestamp')
