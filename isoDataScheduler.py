@@ -17,22 +17,22 @@ from GridCPShaving import GridCPShaving
 from datetime import datetime, timedelta
 def main():
     def putIsoData(dataMiner, isoHelper):
-        print("1")
+        print(" Fetch LMP, InstLoad --- 1")
         dataMiner.fetch_LMP(1, isoHelper)
         dataMiner.fetch_InstantaneousLoad(1, 'ps',isoHelper)
         dataMiner.fetch_InstantaneousLoad(1, 'PJM RTO',isoHelper)
-        print("2")
+        print("Fetch GenFuel --- 2")
         dataMiner.fetch_GenFuel(11, isoHelper)
-        print("3")
+        print("Fetch Meter Data --- 3")
         #dataMiner.fetch_hourlyMeteredLoad(True, 'CurrentYear', True,isoHelper)
         #dataMiner.fetch_hourlyMeteredLoad(False, 'CurrentYear', True,isoHelper)
-        meterData.fetchMeterData('550001081', 1, isoHelper)
+        #meterData.fetchMeterData('550001081', 1, isoHelper)
         #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
-        print("4")
+        print("Fetch Load Forecast --- 4")
         dataMiner.fetch_LoadForecast( 'ps', isoHelper,GCPShave)
         #dataMiner.fetch_7dayLoadForecast(False, isoHelper)
         dataMiner.fetch_LoadForecast('PJM RTO', isoHelper,GCPShave)
-        print("5")
+        print("Print LMPs --- 5")
         df = isoHelper.getLmp_latest(nodeId='PSEG',numIntervals=6)
 
       
@@ -50,7 +50,7 @@ def main():
     eastern = timezone('US/Eastern')
 
     oldestTimeStamp =  datetime.now() - timedelta (hours =-1)
-    meterData.fetchMeterData('550001081', 1000, isoHelper)
+    #meterData.fetchMeterData('550001081', 1000, isoHelper)
     currentDate =datetime.today();
     #startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1)
     #endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1)
