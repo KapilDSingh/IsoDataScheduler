@@ -64,13 +64,13 @@ def main():
    
     #rng.strftime('%B %d, %Y, %r')
     #i=1
-    dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'ps', isoHelper)
-    dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'RTO', isoHelper)
+    #dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'ps', isoHelper)
+    #dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'RTO', isoHelper)
 
     
-    dataMiner.fetch_LMP(8640, isoHelper)
-    dataMiner.fetch_InstantaneousLoad(4320, 'ps',isoHelper)
-    dataMiner.fetch_InstantaneousLoad(4320, 'PJM RTO',isoHelper)
+    #dataMiner.fetch_LMP(8640, isoHelper)
+    #dataMiner.fetch_InstantaneousLoad(4320, 'ps',isoHelper)
+    #dataMiner.fetch_InstantaneousLoad(4320, 'PJM RTO',isoHelper)
 
     #dataMiner.fetch_GenFuel(528, isoHelper)
         #GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
@@ -88,7 +88,7 @@ def main():
 
 
 
-    oldestMergeTimeStamp =  datetime.now() - timedelta (days =60)
+    oldestMergeTimeStamp =  datetime.now() - timedelta (days =30)
 
     isoHelper.mergePSEGTimeSeries(oldestMergeTimeStamp)
     isoHelper.mergeRTOTimeSeries(oldestMergeTimeStamp)

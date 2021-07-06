@@ -215,6 +215,14 @@ class GridCPShaving(object):
 
                 startTimeStamp = periodTimeStamp
 
+                
+                newestEvaluatedAt = forecastDf['EvaluatedAt'].max()
+
+                RefreshDataLst =  [[Area, isHrly, newestEvaluatedAt, zeroTimeStamp]]
+                refreshDf = pd.DataFrame(RefreshDataLst, columns = ['Area', 'isHrly', 'NewEvalTime', 'StartDayTime'])
+                
+
+                isoHelper.saveDf('RefreshDataTbl', refreshDf)
                 if (Area =='ps'):
                     isoHelper.mergePSEGTimeSeries(zeroTimeStamp)
                     isoHelper.mergePSEGHrlySeries(zeroTimeStamp)
@@ -235,14 +243,15 @@ class GridCPShaving(object):
     def CheckCPShaveHour(self, Area, startTimeStamp, endTimeStamp, forecastDf, isoHelper):
 
         try:
-
-            CandidateDf = isoHelper.getMaxLoadforTimePeriod(endTimeStamp, Area)
-
-            dfMerge =pd.merge(CandidateDf,forecastDf,on=['timestamp','timestamp'],how="inner",indicator=False)
+            divisor = forecastDf.ForecstNumReads
             
+
+            MaxLoadDf = isoHelper.getMaxLoadforTimePeriod(endTimeStamp, Area)
             forecastDf.reset_index(drop =True, inplace=True)
-            for timestamp in dfMerge['timestamp']:
-                forecastDf.loc[forecastDf.timestamp == timestamp, 'Peak'] = 2
+
+            MaxForecastDf = forecastDf['Peak' == 1]
+            if  max(MaxLoadDf['MaxLoad'])  < max(MaxForecastDf['HrlyForecstLoad']/divisor):
+                forecastDf['Peak'==1].Peak = 2
         except BaseException as e:
             print("CheckCPShaveHour",e)
         finally:

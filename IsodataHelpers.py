@@ -98,7 +98,7 @@ class IsodataHelpers(object):
     def emptyAllTbls(self):
 
         connection = self.engine.connect()
-        result = connection.execute("delete from peakTable")
+        #result = connection.execute("delete from peakTable")
         #result = connection.execute("delete from lmpTbl")
         #result = connection.execute("delete from loadTbl")
         #result = connection.execute("delete from psInstLoadTbl")
@@ -268,11 +268,11 @@ class IsodataHelpers(object):
         eastern = timezone('US/Eastern')
 
         if (Area == 'ps') :
-            DataTbl = 'psHrlyForecstTbl'
+            DataTbl = 'psHrlyLoadTbl'
             startTime = datetime(endTimeStamp.year, endTimeStamp.month, 1)
             numPoints = 1
         elif (Area == 'PJM RTO'):
-            DataTbl = 'rtoHrlyForecstTbl'
+            DataTbl = 'rtoHrlyLoadTbl'
             startTime =  datetime(endTimeStamp.year, 3, 1)
             numPoints = 6
 
@@ -281,12 +281,9 @@ class IsodataHelpers(object):
             endTimeStr = endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
 
             sql_query = "SELECT  TOP (" + str(numPoints) + ") [timestamp] \
-                ,[ForecstNumReads]\
-                ,[HrlyForecstLoad]\
-                ,[Peak]\
-                ,[HrlyForecstLoad]/NULLIF([ForecstNumReads],0) as MaxLoad \
+                ,[HrlyInstLoad]/NULLIF([NumReads],0) as MaxLoad \
                 FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                and timestamp < CONVERT(DATETIME,'" + endTimeStr + "') and (Peak =1 or Peak = 2)" + " order by MaxLoad desc"
+                and timestamp < CONVERT(DATETIME,'" + endTimeStr + "') " + " order by MaxLoad desc"
   
             df = pd.read_sql_query(sql_query, self.engine) 
             print("Max Loads Df", df, Area)

@@ -94,19 +94,6 @@ class DataMiner(object):
 
             ret = isoHelper.saveLoadDf(Area, False, loadDf)
 
-            #if ((numRows ==1) and  ret==True) :
-            #    timestamp = loadDf.loc[0, 'timestamp']
-
-            #    mergeDt = loadDf['timestamp'][0]
-            #    mergeDt = mergeDt.replace(minute=mergeDt.minute-0)
-                     
-            #    if (Area =='ps'):
-            #        isoHelper.mergePSEGTimeSeries(mergeDt)
-            #        isoHelper.mergePSEGHrlySeries(mergeDt)
-            #    else:
-            #        isoHelper.mergeRTOTimeSeries(mergeDt)
-            #        isoHelper.mergeRTOHrlySeries(mergeDt)
-
  
         except Exception as e:
   
