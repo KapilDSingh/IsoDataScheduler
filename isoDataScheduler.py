@@ -26,7 +26,7 @@ def main():
         print("Fetch Meter Data --- 3")
         #dataMiner.fetch_hourlyMeteredLoad(True, 'CurrentYear', True,isoHelper)
         #dataMiner.fetch_hourlyMeteredLoad(False, 'CurrentYear', True,isoHelper)
-        #meterData.fetchMeterData('550001081', 1, isoHelper)
+        meterData.fetchMeterData('550001081', 1, isoHelper)
         #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
         print("Fetch Load Forecast --- 4")
         dataMiner.fetch_LoadForecast( 'ps', isoHelper,GCPShave)
