@@ -223,14 +223,6 @@ class GridCPShaving(object):
                 
 
                 isoHelper.saveDf('RefreshDataTbl', refreshDf)
-                if (Area =='ps'):
-                    isoHelper.mergePSEGTimeSeries(zeroTimeStamp)
-                    isoHelper.mergePSEGHrlySeries(zeroTimeStamp)
-                else:
-                    isoHelper.mergeRTOTimeSeries(zeroTimeStamp)
-                    isoHelper.mergeRTOHrlySeries(zeroTimeStamp)
-
-
 
         except BaseException as e:
             print("findPeaks",e)
