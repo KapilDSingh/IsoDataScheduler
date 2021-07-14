@@ -273,8 +273,8 @@ class IsodataHelpers(object):
             numPoints = 1
         elif (Area == 'PJM RTO'):
             DataTbl = 'rtoHrlyLoadTbl'
-            startTime =  datetime(endTimeStamp.year, 3, 1)
-            numPoints = 6
+            startTime =  datetime(endTimeStamp.year, 6, 1)
+            numPoints = 5
 
         try:
             startTimeStr = startTime.strftime("%Y-%m-%dT%H:%M:%S")

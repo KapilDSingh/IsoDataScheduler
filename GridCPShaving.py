@@ -170,7 +170,7 @@ class GridCPShaving(object):
                             print ("bothPeaks=", bothPeaks)
 
                             for timestamp in inactivePeaks['timestamp']:
-                                sql_query = "delete from  peakTable  where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
+                                sql_query = "Update  peakTable  set IsActive = 0 where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
                                 result = connection.execute(sql_query)
 
                             for timestamp in bothPeaks['timestamp']:
@@ -249,9 +249,15 @@ class GridCPShaving(object):
         finally:
             return forecastDf
 
+    #def checkPeakStart(self,  currentTime, isoHelper):
+    #    currentTime = DateTime.Now()
+    #    peakStart = getNextPeakStart()
+    #    if (currentTime => peakStart && currentTime < PeakEnd)
+    #        print ('Start Shaving')
 
 
     def checkPeakEnd(self,  Area, currentTimeStamp, isoHelper):
+
         if (Area == 'ps'):
 
             forecastTbl = 'psHrlyForecstTbl'
