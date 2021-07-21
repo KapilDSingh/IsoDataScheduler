@@ -64,8 +64,8 @@ def main():
    
     #rng.strftime('%B %d, %Y, %r')
     #i=1
-    #dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'ps', isoHelper)
-    #dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'RTO', isoHelper)
+    dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'ps', isoHelper)
+    dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'RTO', isoHelper)
 
     
     #dataMiner.fetch_LMP(8640, isoHelper)
@@ -76,7 +76,7 @@ def main():
     #GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
     #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', False, False, isoHelper)
     #GCPShave.findPeaks(oldestTimeStamp,  'ps', True, False, isoHelper)
-    GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
+    #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
     #GCPShave.checkPeaks('ps', True, isoHelper)
     #GCPShave.checkPeaks('PJM RTO', True, isoHelper)
 
