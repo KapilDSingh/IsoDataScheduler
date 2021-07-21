@@ -280,13 +280,22 @@ class IsodataHelpers(object):
             startTimeStr = startTime.strftime("%Y-%m-%dT%H:%M:%S")
             endTimeStr = endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
 
-            sql_query = "SELECT  TOP (" + str(numPoints) + ") [timestamp] \
-                ,[HrlyInstLoad]/NULLIF([NumReads],0) as MaxLoad \
-                FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                and timestamp < CONVERT(DATETIME,'" + endTimeStr + "') " + " order by MaxLoad desc"
+            connection = self.engine.connect()
+            sql_query = "Update rtoHrlyForecstTbl \
+            set Peak = 2 where rtoHrlyForecstTbl.timestamp in \
+            (SELECT TOP (5) rtoHrlyLoadTbl.timestamp \
+                FROM   rtoHrlyLoadTbl INNER JOIN\
+                    rtoHrlyForecstTbl ON rtoHrlyLoadTbl.timestamp = rtoHrlyForecstTbl.timestamp\
+                WHERE (rtoHrlyForecstTbl.Peak = 1) \
+                and rtoHrlyForecstTbl.timestamp >= '2021-6-1'\
+                ORDER BY rtoHrlyLoadTbl.HrlyInstLoad / rtoHrlyLoadTbl.NumReads DESC)"
+
+            result = connection.execute(sql_query)
+
+            connection.close()
   
             df = pd.read_sql_query(sql_query, self.engine) 
-            #print("Max Loads Df", df, Area)
+
         except BaseException as e:
 
             print("getMaxLoadforTimePeriod",e)

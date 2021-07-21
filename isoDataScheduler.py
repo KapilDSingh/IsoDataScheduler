@@ -49,7 +49,7 @@ def main():
     
     eastern = timezone('US/Eastern')
 
-    oldestTimeStamp =  datetime.now() - timedelta (hours =-1)
+    oldestTimeStamp =  datetime.now() - timedelta (days =60)
     #meterData.fetchMeterData('550001081', 1000, isoHelper)
     currentDate =datetime.today();
     #startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1)
@@ -73,10 +73,10 @@ def main():
     #dataMiner.fetch_InstantaneousLoad(4320, 'PJM RTO',isoHelper)
 
     #dataMiner.fetch_GenFuel(528, isoHelper)
-        #GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
+    #GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
     #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', False, False, isoHelper)
     #GCPShave.findPeaks(oldestTimeStamp,  'ps', True, False, isoHelper)
-    #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
+    GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
     #GCPShave.checkPeaks('ps', True, isoHelper)
     #GCPShave.checkPeaks('PJM RTO', True, isoHelper)
 

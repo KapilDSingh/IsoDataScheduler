@@ -156,18 +156,18 @@ class GridCPShaving(object):
 
                             prevPeakDf = pd.read_sql_query(sql_query, isoHelper.engine)    
                             prevPeakDf.reset_index(drop=True,inplace=True)
-                            print("***********************findPeaks************")
-                            print("peakDf = ", peakDf)
-                            print("prevPeakDf = ", prevPeakDf)
+                            #print("***********************findPeaks************")
+                            #print("peakDf = ", peakDf)
+                            #print("prevPeakDf = ", prevPeakDf)
 
                             dfMerge =pd.merge(peakDf,prevPeakDf,on=['timestamp','timestamp'],how="outer",indicator=True)
                         
                             inactivePeaks = dfMerge[dfMerge['_merge']=='right_only']
                             newPeaks = dfMerge[dfMerge['_merge']=='left_only']
                             bothPeaks =  dfMerge[dfMerge['_merge']=='both']
-                            print ("inactivePeaks=", inactivePeaks)
-                            print ("newPeaks=", newPeaks)
-                            print ("bothPeaks=", bothPeaks)
+                            #print ("inactivePeaks=", inactivePeaks)
+                            #print ("newPeaks=", newPeaks)
+                            #print ("bothPeaks=", bothPeaks)
 
                             for timestamp in inactivePeaks['timestamp']:
                                 sql_query = "Update  peakTable  set IsActive = 0 where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
@@ -208,10 +208,8 @@ class GridCPShaving(object):
                     isoHelper.replaceDf(DataTbl, forecastDf)
                      
  
-                    if ((isHrly==True)):
-                        forecastDf = self.CheckCPShaveHour(Area,startTimeStamp, periodTimeStamp, forecastDf, isoHelper)
-                        isoHelper.replaceDf(DataTbl, forecastDf)
-                        self.checkPeakEnd(  Area,  periodTimeStamp, isoHelper)
+                if ((isHrly==True) and (Area == 'PJM RTO')):
+                        self.CheckCPShaveHour(isoHelper)
 
                 startTimeStamp = periodTimeStamp
 
@@ -232,22 +230,34 @@ class GridCPShaving(object):
 
             return forecastDf
 
-    def CheckCPShaveHour(self, Area, startTimeStamp, endTimeStamp, forecastDf, isoHelper):
+    def CheckCPShaveHour(self, isoHelper):
 
         try:
-            divisor = forecastDf.ForecstNumReads
-            
+            connection = isoHelper.engine.connect()
 
-            MaxLoadDf = isoHelper.getMaxLoadforTimePeriod(endTimeStamp, Area)
-            forecastDf.reset_index(drop =True, inplace=True)
 
-            MaxForecastDf = forecastDf['Peak' == 1]
-            if  max(MaxLoadDf['MaxLoad'])  < max(MaxForecastDf['HrlyForecstLoad']/divisor):
-                forecastDf['Peak'==1].Peak = 2
+            sql_query = "SELECT TOP (5) timestamp \
+                FROM   rtoHrlyForecstTbl \
+            WHERE (Peak > 0) AND (timestamp >= '2021-6-1') and \
+            (timestamp < '2021-10-1') and \
+            (HrlyForecstLoad / ForecstNumReads) > 137000 \
+            order by (HrlyForecstLoad / ForecstNumReads) desc"
+
+            HighestPeaksDf = pd.read_sql_query(sql_query, isoHelper.engine)    
+            HighestPeaksDf.reset_index(drop=True,inplace=True)
+
+            for timestamp in HighestPeaksDf['timestamp']:
+               sql_query = "Update rtoHrlyForecstTbl \
+                        set Peak = 2 where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S")+"'"
+               result = connection.execute(sql_query)
+
+            connection.close()
+  
+
         except BaseException as e:
             print("CheckCPShaveHour",e)
         finally:
-            return forecastDf
+            return 
 
     #def checkPeakStart(self,  currentTime, isoHelper):
     #    currentTime = DateTime.Now()
