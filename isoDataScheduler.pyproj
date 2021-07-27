@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>isoDataScheduler</Name>
     <RootNamespace>isoDataScheduler</RootNamespace>
-    <InterpreterId>MSBuild|env9|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|env6|$(MSBuildProjectFullPath)</InterpreterId>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
     <PublishUrl>C:\isodatascheduler</PublishUrl>
     <IsWindowsApplication>False</IsWindowsApplication>

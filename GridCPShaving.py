@@ -149,7 +149,7 @@ class GridCPShaving(object):
 
                             peakDf.insert(len(peakDf.columns), 'Prominence',peakProminence)
 
-                            sql_query = "SELECT [timestamp] ,[ForecstNumReads],[HrlyForecstLoad],[Peak],[EvaluatedAt],\
+                            sql_query = "SELECT [timestamp] ,\
                                      [Area],[IsActive] ,[InitialTimestamp],[PeakStart],[PeakEnd], Overtime \
                                      FROM [ISODB].[dbo].[peakTable] where Area = '" + Area + "' \
                                     and  timestamp >= '" + startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S") + "'"
@@ -173,14 +173,7 @@ class GridCPShaving(object):
                                 sql_query = "Update  peakTable  set IsActive = 0 where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
                                 result = connection.execute(sql_query)
 
-                            for timestamp in bothPeaks['timestamp']:
-   
-                                EvalAt = peakDf.loc[peakDf.timestamp == timestamp, 'EvaluatedAt']
-
-                                sql_query = "update peakTable set EvaluatedAt = '" + EvalAt.iloc[0].strftime("%Y-%m-%dT%H:%M:%S") + \
-                                    "' where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
-                                result = connection.execute(sql_query)
-                        
+                       
                             newPeaks.reset_index(drop=True,inplace=True)
                             peakDf.reset_index(drop=True,inplace=True)
 
@@ -189,7 +182,6 @@ class GridCPShaving(object):
 
                                 newPeaks["Area"]=Area
                                 newPeaks["PeakEnd"] = peakDf["timestamp"]
-                                newPeaks["EvaluatedAt"] = peakDf["EvaluatedAt"] 
                                 newPeaks["IsActive"] = True
                                 newPeaks["Overtime"] = newPeaks["PeakEnd"] 
                                 newPeaks["InitialTimestamp"] = newPeaks["EvaluatedAt"] 

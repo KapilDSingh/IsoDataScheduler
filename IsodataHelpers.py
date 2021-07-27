@@ -98,7 +98,7 @@ class IsodataHelpers(object):
     def emptyAllTbls(self):
 
         connection = self.engine.connect()
-        #result = connection.execute("delete from peakTable")
+        result = connection.execute("delete from peakTable")
         #result = connection.execute("delete from lmpTbl")
         #result = connection.execute("delete from loadTbl")
         #result = connection.execute("delete from psInstLoadTbl")
@@ -475,3 +475,16 @@ class IsodataHelpers(object):
 
             return df
 
+    def call_procedure(self,function_name, params):
+    
+        connection = self.engine.raw_connection()
+        try:
+            cursor = connection.cursor()
+            cursor.execute(function_name,params)
+            
+            results = list(cursor.fetchall())
+            cursor.close()
+            connection.commit()
+        finally:
+            connection.close()
+            return results

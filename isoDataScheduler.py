@@ -73,12 +73,10 @@ def main():
     #dataMiner.fetch_InstantaneousLoad(4320, 'PJM RTO',isoHelper)
 
     #dataMiner.fetch_GenFuel(528, isoHelper)
-    #GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
-    #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', False, False, isoHelper)
-    #GCPShave.findPeaks(oldestTimeStamp,  'ps', True, False, isoHelper)
-    #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
-    #GCPShave.checkPeaks('ps', True, isoHelper)
-    #GCPShave.checkPeaks('PJM RTO', True, isoHelper)
+    GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
+    GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', False, False, isoHelper)
+    GCPShave.findPeaks(oldestTimeStamp,  'ps', True, False, isoHelper)
+    GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
 
     
     dataMiner.fetch_LoadForecast( 'ps', isoHelper, GCPShave)
@@ -99,6 +97,17 @@ def main():
 
     while True:
         putIsoData(dataMiner,isoHelper)
+        Results = isoHelper.call_procedure("[ISPeakShavingON]", [])
+        if (len(Results[0]) == 1):
+            timestamp = Results[0][0]
+            Results = isoHelper.call_procedure("[TurnPeakShavingOn] ?", Results[0][0])
+        
+            #Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
+            #if (len(Results[0]) == 1):
+            #    timestamp = Results[0][0]
+            #    Results = isoHelper.call_procedure("[CheckPeakShavingOff] ?", Results[0][0])
+              
+  
         time.sleep(60)
 
 main()
