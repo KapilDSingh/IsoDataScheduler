@@ -73,14 +73,14 @@ def main():
     #dataMiner.fetch_InstantaneousLoad(4320, 'PJM RTO',isoHelper)
 
     #dataMiner.fetch_GenFuel(528, isoHelper)
-    GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
-    GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', False, False, isoHelper)
-    GCPShave.findPeaks(oldestTimeStamp,  'ps', True, False, isoHelper)
-    GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
+    #GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
+    #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', False, False, isoHelper)
+    #GCPShave.findPeaks(oldestTimeStamp,  'ps', True, False, isoHelper)
+    #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
 
     
-    dataMiner.fetch_LoadForecast( 'ps', isoHelper, GCPShave)
-    dataMiner.fetch_LoadForecast('PJM RTO', isoHelper, GCPShave)
+    #dataMiner.fetch_LoadForecast( 'ps', isoHelper, GCPShave)
+    #dataMiner.fetch_LoadForecast('PJM RTO', isoHelper, GCPShave)
     ##dataMiner.fetch_7dayLoadForecast(True, isoHelper)
     
 
