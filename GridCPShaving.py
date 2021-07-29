@@ -177,25 +177,25 @@ class GridCPShaving(object):
                             newPeaks.reset_index(drop=True,inplace=True)
                             peakDf.reset_index(drop=True,inplace=True)
 
-                            if (len(newPeaks) > 0 and len(peakDf) >0):
-                                newPeaks=peakDf.loc[newPeaks.timestamp == peakDf.timestamp]
+                            #if (len(newPeaks) > 0 and len(peakDf) >0):
+                            #    newPeaks=peakDf.loc[newPeaks.timestamp == peakDf.timestamp]
 
-                                newPeaks["Area"]=Area
-                                newPeaks["PeakEnd"] = peakDf["timestamp"]
-                                newPeaks["IsActive"] = True
-                                newPeaks["Overtime"] = newPeaks["PeakEnd"] 
-                                newPeaks["InitialTimestamp"] = newPeaks["EvaluatedAt"] 
-                                newPeaks["Prominence"] = peakDf["Prominence"]
+                            #    newPeaks["Area"]=Area
+                            #    newPeaks["PeakEnd"] = peakDf["timestamp"]
+                            #    newPeaks["IsActive"] = True
+                            #    newPeaks["Overtime"] = newPeaks["PeakEnd"] 
+                            #    newPeaks["InitialTimestamp"] = newPeaks["EvaluatedAt"] 
+                            #    newPeaks["Prominence"] = peakDf["Prominence"]
 
-                                for timestamp in newPeaks['timestamp']:
+                            #    for timestamp in newPeaks['timestamp']:
 
-                                    EvalAt = newPeaks.loc[newPeaks.timestamp == timestamp, 'EvaluatedAt']
-                                    if (timestamp-timedelta (hours=1) > EvalAt.iloc[0] ):
-                                        newPeaks.loc[newPeaks.timestamp == timestamp, 'PeakStart'] = timestamp-timedelta (hours=1)
-                                    else:
-                                        newPeaks.loc[newPeaks.timestamp == timestamp, 'PeakStart'] =  EvalAt.iloc[0]
+                            #        EvalAt = newPeaks.loc[newPeaks.timestamp == timestamp, 'EvaluatedAt']
+                            #        if (timestamp-timedelta (hours=1) > EvalAt.iloc[0] ):
+                            #            newPeaks.loc[newPeaks.timestamp == timestamp, 'PeakStart'] = timestamp-timedelta (hours=1)
+                            #        else:
+                            #            newPeaks.loc[newPeaks.timestamp == timestamp, 'PeakStart'] =  EvalAt.iloc[0]
                                 
-                                res = isoHelper.saveDf("peakTable", newPeaks)
+                            #        res = isoHelper.saveDf("peakTable", newPeaks)
 
                     isoHelper.replaceDf(DataTbl, forecastDf)
                      

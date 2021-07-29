@@ -64,8 +64,8 @@ def main():
    
     #rng.strftime('%B %d, %Y, %r')
     #i=1
-    dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'ps', isoHelper)
-    dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'RTO', isoHelper)
+    #dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'ps', isoHelper)
+    #dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'RTO', isoHelper)
 
     
     #dataMiner.fetch_LMP(8640, isoHelper)
@@ -98,14 +98,14 @@ def main():
     while True:
         putIsoData(dataMiner,isoHelper)
         Results = isoHelper.call_procedure("[ISPeakShavingON]", [])
-        if (len(Results[0]) == 1):
+        if (len(Results) == 1):
             timestamp = Results[0][0]
             Results = isoHelper.call_procedure("[TurnPeakShavingOn] ?", Results[0][0])
         
-            #Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
-            #if (len(Results[0]) == 1):
-            #    timestamp = Results[0][0]
-            #    Results = isoHelper.call_procedure("[CheckPeakShavingOff] ?", Results[0][0])
+            Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
+            if (len(Results) == 1):
+                timestamp = Results[0][0]
+                Results = isoHelper.call_procedure("[CheckPeakShavingOff] ?", Results[0][0])
               
   
         time.sleep(60)
