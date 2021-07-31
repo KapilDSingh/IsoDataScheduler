@@ -492,20 +492,19 @@ class IsodataHelpers(object):
             connection.close()
             return results
 
-    def SetRelayState(self, stateFull):
+    def SetRelayState(self, state):
 
         relaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         relaySocket.connect(('192.168.1.44', 144))
-
         print(relaySocket)
-        stateStr = "GET /stateFull.xml?relayState=" + str(stateFull) +  "HTTP/1.1\r\nAuthorization: Basic bm9uZTp3ZWJyZWxheQ=\r\n\r\n=" 
+
+
+        stateStr = "GET /stateFull.xml?relayState=" + str(state) +  " HTTP/1.1\r\nAuthorization: Basic bm9uZTp3ZWJyZWxheQ=\r\n\r\n=" 
         byteArray = bytearray(stateStr, 'utf-8')
         print (byteArray)
 
-        sent = relaySocket.send(byteArray[0:])
-        if sent == 0:
-            raise RuntimeError("socket connection broken")
+        relaySocket.sendall(byteArray)
 
         relaySocket.close()
 
@@ -522,16 +521,16 @@ class IsodataHelpers(object):
         byteArray = bytearray(stateStr, 'utf-8')
         print (byteArray)
 
-        sent = relaySocket.send(byteArray[0:])
+        sent = relaySocket.sendall(byteArray)
         if sent == 0:
             raise RuntimeError("socket connection broken")
 
-        stateFull = relaySocket.recv( 2048)
-        if stateFull == b'':
+        state = relaySocket.recv( 2048)
+        if state == b'':
             raise RuntimeError("socket connection broken")
         else:
-             print (stateFull)
-             stateStr =  str(stateFull, 'utf-8')
+             print (state)
+             stateStr =  str(state, 'utf-8')
              relayState = stateStr[66]
              relaySocket.close()
              i=1
