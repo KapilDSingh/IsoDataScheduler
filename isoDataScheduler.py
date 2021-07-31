@@ -38,12 +38,13 @@ def main():
       
         print(df)
    
-        return
    
     dataMiner = DataMiner()
     isoHelper = IsodataHelpers()
     meterData = MeterData()
     GCPShave = GridCPShaving()
+
+    isoHelper.GettRelayState()
 
     isoHelper.emptyAllTbls()
     
@@ -97,18 +98,36 @@ def main():
 
     while True:
         putIsoData(dataMiner,isoHelper)
+
         Results = isoHelper.call_procedure("[ISPeakShavingON]", [])
         if (len(Results) == 1):
             timestamp = Results[0][0]
-            Results = isoHelper.call_procedure("[TurnPeakShavingOn] ?", Results[0][0])
-        
-            Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
+            Results = isoHelper.call_procedure("[TurnPeakShavingOn] ?", timestamp)
             if (len(Results) == 1):
-                timestamp = Results[0][0]
-                Results = isoHelper.call_procedure("[CheckPeakShavingOff] ?", Results[0][0])
+                isoHelper.SetRelayState(1)
+
+        Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
+        if (len(Results) == 1):
+            timestamp = Results[0][0]
+            Results = isoHelper.call_procedure("[ChkShavingOff] ?", timestamp)
+            if (len(Results) == 0):
+                Results = isoHelper.call_procedure("[ChkLoadDecreasing] ?", timestamp)
+                if (len(Results) == 1):
+                        isoHelper.SetRelayState(0)
+                        Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
+
+                else:
+                    Results = isoHelper.call_procedure("[ChkOverTime] ?", timestamp)
+                    if (len(Results) ==1):
+                            isoHelper.SetRelayState(0)
+                            Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
               
-  
+        isoHelper.SetRelayState(0)
+
         time.sleep(60)
+        isoHelper.SetRelayState(1)
+        time.sleep(10)
+        isoHelper.GettRelayState()
 
 main()
 

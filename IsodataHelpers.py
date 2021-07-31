@@ -20,6 +20,7 @@ import requests
 from urllib.parse import urlencode, quote_plus,urlparse, parse_qsl
 import pyperclip
 from dateutil.relativedelta import relativedelta
+import socket
 
 
 
@@ -476,7 +477,7 @@ class IsodataHelpers(object):
             return df
 
     def call_procedure(self,function_name, params):
-    
+        results = None
         connection = self.engine.raw_connection()
         try:
             cursor = connection.cursor()
@@ -485,6 +486,53 @@ class IsodataHelpers(object):
             results = list(cursor.fetchall())
             cursor.close()
             connection.commit()
+        except Exception as e:
+               print(e)
         finally:
             connection.close()
             return results
+
+    def SetRelayState(self, stateFull):
+
+        relaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        relaySocket.connect(('192.168.1.44', 144))
+
+        print(relaySocket)
+        stateStr = "GET /stateFull.xml?relayState=" + str(stateFull) +  "HTTP/1.1\r\nAuthorization: Basic bm9uZTp3ZWJyZWxheQ=\r\n\r\n=" 
+        byteArray = bytearray(stateStr, 'utf-8')
+        print (byteArray)
+
+        sent = relaySocket.send(byteArray[0:])
+        if sent == 0:
+            raise RuntimeError("socket connection broken")
+
+        relaySocket.close()
+
+
+    def  GettRelayState(self):
+
+        relaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        relaySocket.connect(('192.168.1.44', 144))
+
+        print(relaySocket)
+        stateStr = "GET /stateFull.xml?noReply=0 HTTP/1.1\r\nAuthorization: Basic bm9uZTp3ZWJyZWxheQ=\r\n\r\n=" 
+
+        byteArray = bytearray(stateStr, 'utf-8')
+        print (byteArray)
+
+        sent = relaySocket.send(byteArray[0:])
+        if sent == 0:
+            raise RuntimeError("socket connection broken")
+
+        stateFull = relaySocket.recv( 2048)
+        if stateFull == b'':
+            raise RuntimeError("socket connection broken")
+        else:
+             print (stateFull)
+             stateStr =  str(stateFull, 'utf-8')
+             relayState = stateStr[66]
+             relaySocket.close()
+             i=1
+
