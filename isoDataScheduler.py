@@ -44,6 +44,8 @@ def main():
     meterData = MeterData()
     GCPShave = GridCPShaving()
 
+    relayState =0
+
     isoHelper.GettRelayState()
 
     isoHelper.emptyAllTbls()
@@ -104,7 +106,7 @@ def main():
             timestamp = Results[0][0]
             Results = isoHelper.call_procedure("[TurnPeakShavingOn] ?", timestamp)
             if (len(Results) == 1):
-                isoHelper.SetRelayState(1)
+               relayState =1
 
         Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
         if (len(Results) == 1):
@@ -113,21 +115,18 @@ def main():
             if (len(Results) == 0):
                 Results = isoHelper.call_procedure("[ChkLoadDecreasing] ?", timestamp)
                 if (len(Results) == 1):
-                        isoHelper.SetRelayState(0)
+                        relayState = 0
                         Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
 
                 else:
                     Results = isoHelper.call_procedure("[ChkOverTime] ?", timestamp)
                     if (len(Results) ==1):
-                            isoHelper.SetRelayState(0)
+                            relayState = 0
                             Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
               
-        isoHelper.SetRelayState(0)
+        isoHelper.SetRelayState(relayState)
 
         time.sleep(60)
-        isoHelper.SetRelayState(1)
-        time.sleep(10)
-        isoHelper.GettRelayState()
 
 main()
 
