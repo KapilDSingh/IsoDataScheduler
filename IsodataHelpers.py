@@ -496,7 +496,7 @@ class IsodataHelpers(object):
 
         relaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        relaySocket.connect(('192.168.1.44', 144))
+        relaySocket.connect(('68.195.10.119',144))
         print(relaySocket)
 
 
@@ -513,7 +513,7 @@ class IsodataHelpers(object):
 
         relaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        relaySocket.connect(('192.168.1.44', 144))
+        relaySocket.connect(('68.195.10.119',144))
 
         print(relaySocket)
         stateStr = "GET /stateFull.xml?noReply=0 HTTP/1.1\r\nAuthorization: Basic bm9uZTp3ZWJyZWxheQ=\r\n\r\n=" 
