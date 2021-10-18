@@ -494,46 +494,54 @@ class IsodataHelpers(object):
 
     def SetRelayState(self, state):
 
-       
-        
-        relaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+         try:
+            relaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        relaySocket.connect(('68.195.10.119', 144))
-        print(relaySocket)
+            relaySocket.connect(('68.195.10.119', 144))
+            print(relaySocket)
 
 
-        stateStr = "GET /stateFull.xml?relayState=" + str(state) +  " HTTP/1.1\r\nAuthorization: Basic bm9uZTp3ZWJyZWxheQ=\r\n\r\n=" 
-        byteArray = bytearray(stateStr, 'utf-8')
-        print (byteArray)
+            stateStr = "GET /stateFull.xml?relayState=" + str(state) +  " HTTP/1.1\r\nAuthorization: Basic bm9uZTp3ZWJyZWxheQ=\r\n\r\n=" 
+            byteArray = bytearray(stateStr, 'utf-8')
+            print (byteArray)
 
-        relaySocket.sendall(byteArray)
-
-        relaySocket.close()
+            relaySocket.sendall(byteArray)
+         except Exception as e:
+               print(e)
+         finally:
+            relaySocket.close()
 
 
     def  GettRelayState(self):
-    
-        relaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        relaySocket.connect(('68.195.10.119', 144))
+        try:
+  
+            relaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        print(relaySocket)
-        stateStr = "GET /stateFull.xml?noReply=0 HTTP/1.1\r\nAuthorization: Basic bm9uZTp3ZWJyZWxheQ=\r\n\r\n=" 
+            relaySocket.connect(('68.195.10.119', 144))
 
-        byteArray = bytearray(stateStr, 'utf-8')
-        print (byteArray)
+            print(relaySocket)
+            stateStr = "GET /stateFull.xml?noReply=0 HTTP/1.1\r\nAuthorization: Basic bm9uZTp3ZWJyZWxheQ=\r\n\r\n=" 
 
-        sent = relaySocket.sendall(byteArray)
-        if sent == 0:
-            raise RuntimeError("socket connection broken")
+            byteArray = bytearray(stateStr, 'utf-8')
+            print (byteArray)
 
-        state = relaySocket.recv( 2048)
-        if state == b'':
-            raise RuntimeError("socket connection broken")
-        else:
-             print (state)
-             stateStr =  str(state, 'utf-8')
-             relayState = stateStr[66]
-             relaySocket.close()
-             i=1
+            sent = relaySocket.sendall(byteArray)
+            if sent == 0:
+                raise RuntimeError("socket connection broken")
+
+            state = relaySocket.recv( 2048)
+            if state == b'':
+                raise RuntimeError("socket connection broken")
+            else:
+                 print (state)
+                 stateStr =  str(state, 'utf-8')
+                 relayState = stateStr[66]
+
+                 relaySocket.close()
+                 i=1
+        except Exception as e:
+               print(e)
+        finally:
+            relaySocket.close()
 
