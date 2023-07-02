@@ -46,7 +46,7 @@ def main():
 
     relayState =0
 
-    isoHelper.GettRelayState()
+    #isoHelper.GettRelayState()
 
     isoHelper.emptyAllTbls()
     
@@ -124,7 +124,7 @@ def main():
                             relayState = 0
                             Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
               
-        isoHelper.SetRelayState(relayState)
+        #isoHelper.SetRelayState(relayState)
 
         time.sleep(60)
 

@@ -195,6 +195,9 @@ class IsodataHelpers(object):
                  else:
                     DataTbl = 'loadTbl'
                     HrlyTbl = 'rtoHrlyLoadTbl'
+
+            loadDf['timestamp'] =loadDf['timestamp'].apply(lambda x: x.round(freq='T'))
+
         
             if (len(loadDf.index) > 1):
                 oldestTimestamp =loadDf['timestamp'].min()
@@ -515,7 +518,7 @@ class IsodataHelpers(object):
     def  GettRelayState(self):
 
         try:
-  
+
             relaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
             relaySocket.connect(('68.195.10.119', 144))
