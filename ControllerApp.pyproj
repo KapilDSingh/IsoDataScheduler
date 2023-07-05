@@ -64,15 +64,6 @@
     <Folder Include="env1\Lib\site-packages\urllib3\packages\backports" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="env10\">
-      <Id>env10</Id>
-      <Description>env10 (Python 3.11 (64-bit))</Description>
-      <InterpreterPath>Scripts\python.exe</InterpreterPath>
-      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
-      <Version>3.11</Version>
-      <Architecture>X64</Architecture>
-      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
-    </Interpreter>
     <Interpreter Include="env11\">
       <Id>env11</Id>
       <Description>env11 (Python 3.7 (64-bit))</Description>
