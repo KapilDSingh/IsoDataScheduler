@@ -26,42 +26,11 @@
   <ItemGroup>
     <Compile Include="DataMiner.py" />
     <Compile Include="elsServerApp.py" />
-    <Compile Include="env1\Lib\site-packages\pandas\core\arrays\base.py" />
-    <Compile Include="env1\Lib\site-packages\pandas\core\base.py" />
-    <Compile Include="env1\Lib\site-packages\pandas\core\sorting.py" />
-    <Compile Include="env1\Lib\site-packages\pandas\_version.py" />
-    <Compile Include="env1\Lib\site-packages\pandas\__init__.py" />
-    <Compile Include="env1\Lib\site-packages\pip\_vendor\urllib3\packages\backports\makefile.py" />
-    <Compile Include="env1\Lib\site-packages\pip\_vendor\urllib3\packages\backports\__init__.py" />
-    <Compile Include="env1\Lib\site-packages\pip\_vendor\urllib3\packages\six.py" />
-    <Compile Include="env1\Lib\site-packages\pip\_vendor\urllib3\packages\__init__.py" />
-    <Compile Include="env1\Lib\site-packages\schedule\__init__.py" />
-    <Compile Include="env1\Lib\site-packages\urllib3\packages\backports\makefile.py" />
-    <Compile Include="env1\Lib\site-packages\urllib3\packages\backports\__init__.py" />
-    <Compile Include="env1\Lib\site-packages\urllib3\packages\six.py" />
-    <Compile Include="env1\Lib\site-packages\urllib3\packages\__init__.py" />
     <Compile Include="GridCPShaving.py" />
     <Compile Include="IsodataHelpers.py" />
     <Compile Include="isoDataScheduler.py" />
     <Compile Include="meterData.py" />
     <Compile Include="oasisData2.py" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="env1\" />
-    <Folder Include="env1\Lib\" />
-    <Folder Include="env1\Lib\site-packages\" />
-    <Folder Include="env1\Lib\site-packages\pandas" />
-    <Folder Include="env1\Lib\site-packages\pandas\core" />
-    <Folder Include="env1\Lib\site-packages\pandas\core\arrays" />
-    <Folder Include="env1\Lib\site-packages\pip\" />
-    <Folder Include="env1\Lib\site-packages\pip\_vendor\" />
-    <Folder Include="env1\Lib\site-packages\pip\_vendor\urllib3\" />
-    <Folder Include="env1\Lib\site-packages\pip\_vendor\urllib3\packages" />
-    <Folder Include="env1\Lib\site-packages\pip\_vendor\urllib3\packages\backports" />
-    <Folder Include="env1\Lib\site-packages\schedule" />
-    <Folder Include="env1\Lib\site-packages\urllib3\" />
-    <Folder Include="env1\Lib\site-packages\urllib3\packages" />
-    <Folder Include="env1\Lib\site-packages\urllib3\packages\backports" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env11\">
