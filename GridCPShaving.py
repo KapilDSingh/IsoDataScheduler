@@ -139,8 +139,13 @@ class GridCPShaving(object):
 
 
             if (len(peakDf) == 1):
-                sql_query = "into into peakSignalTbl Values (" + peakDf[0].timestamp, peakDf[0].Area, peakDf[0].Peak, peakDf[0].EvaluatedAt,  peakDf[0].timestamp  + timedelta(hours =-1)
+                peakStartTime = peakDf[0].timestamp  + timedelta(hours =-1)
+                sql_query = "into into peakSignalTbl Values (" + peakDf[0].timestamp, peakDf[0].Area, peakDf[0].Peak, peakDf[0].EvaluatedAt, peakStartTime  +")"
                 result = connection.execute(sql_query)
+
+                if  ((peakStartTime <= peakDf[0].EvaluatedAt) and (peakDf[0].EvaluatedAt <= peakDf[0].timestamp)):
+                    print ("Start Shaving")
+
 
 
             if ((isHrly==True) and (Area == 'PJM RTO')):
