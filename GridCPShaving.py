@@ -132,11 +132,11 @@ class GridCPShaving(object):
 
             forecastDf, peakProminence = self.peakSignal(forecastDf, Area, isHrly)
 
-            peakDf.reset_index(drop=True,inplace=True)
-
             isoHelper.replaceDf(DataTbl, forecastDf)
                      
             peakDf = forecastDf[forecastDf['Peak'] > 0]
+            peakDf.reset_index(drop=True,inplace=True)
+
 
             if (len(peakDf) == 1):
                 sql_query = "into into peakSignalTbl Values (" + peakDf[0].timestamp, peakDf[0].Area, peakDf[0].Peak, peakDf[0].EvaluatedAt,  peakDf[0].timestamp  + timedelta(hours =-1)
