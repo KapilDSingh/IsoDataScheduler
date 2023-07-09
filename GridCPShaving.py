@@ -81,6 +81,7 @@ class GridCPShaving(object):
 
 
     def findPeaks(self, oldestTimestamp, Area, isHrly, isIncremental, isoHelper):
+
         if (Area == 'ps') and isHrly == False:
             DataTbl = 'forecastTbl'
         elif (Area == 'ps') and isHrly == True:
@@ -95,10 +96,9 @@ class GridCPShaving(object):
         try:
             connection = isoHelper.engine.connect()
 
-            startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(Area, isHrly)
-            zeroTimeStamp = oldestTimestamp.replace(hour = 0, minute=0, second = 0, microsecond =0)
+            firstTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(Area, isHrly)
+            startTimeStamp = oldestTimestamp.replace(hour = 0, minute=0, second = 0, microsecond =0)
 
-            startTimeStamp = zeroTimeStamp
             startTimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
             endTimeStr = endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -106,114 +106,48 @@ class GridCPShaving(object):
                 "')  and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')"
                
             result = connection.execute(sql_query)
-
-            periodTimeStamp = startTimeStamp
-
-            while (periodTimeStamp < endTimeStamp):
-
-                periodTimeStamp = periodTimeStamp + timedelta(hours = 24)
-
-                if (periodTimeStamp > endTimeStamp):
-                    periodTimeStamp = endTimeStamp
             
-                startTimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
-                endTimeStr = periodTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+            startTimeStr = startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
+            endTimeStr = endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S")
 
-                if (isHrly==True):
-                    sql_query = "SELECT  [timestamp] \
-                            ,[ForecstNumReads]\
-                            ,[HrlyForecstLoad]\
-                            ,[Peak]\
-                            ,[EvaluatedAt]\
-                            FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                            and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
-                else:
-                    sql_query = "SELECT  [timestamp] \
-                            ,[LoadForecast]\
-                            ,[EvaluatedAt] ,[Area],[Peak]\
-                            FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
-                            and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
-
-
-                forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
-                forecastDf.reset_index(drop =True, inplace=True)
+            if (isHrly==True):
+                sql_query = "SELECT  [timestamp] \
+                        ,[ForecstNumReads]\
+                        ,[HrlyForecstLoad]\
+                        ,[Peak]\
+                        ,[EvaluatedAt]\
+                        FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
+                and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
+            else:
+                sql_query = "SELECT  [timestamp] \
+                        ,[LoadForecast]\
+                        ,[EvaluatedAt] ,[Area],[Peak]\
+                        FROM [ISODB].[dbo]." + DataTbl + " where timestamp >= CONVERT(DATETIME,'" + startTimeStr + "') \
+                        and timestamp <= CONVERT(DATETIME,'" + endTimeStr + "')" + " order by timestamp"
 
 
-                forecastDf, peakProminence = self.peakSignal(forecastDf, Area, isHrly)
+            forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
+            forecastDf.reset_index(drop =True, inplace=True)
 
-                peakDf = forecastDf[forecastDf['Peak'] > 0]
 
-                if (len(peakDf) > 0):
+            forecastDf, peakProminence = self.peakSignal(forecastDf, Area, isHrly)
 
-                    if ((isHrly==True)):
+            peakDf.reset_index(drop=True,inplace=True)
 
-                            peakDf.insert(len(peakDf.columns), 'Prominence',peakProminence)
-
-                            sql_query = "SELECT [timestamp] ,\
-                                     [Area],[IsActive] ,[InitialTimestamp],[PeakStart],[PeakEnd], Overtime \
-                                     FROM [ISODB].[dbo].[peakTable] where Area = '" + Area + "' \
-                                    and  timestamp >= '" + startTimeStamp.strftime("%Y-%m-%dT%H:%M:%S") + "'"
-
-                            prevPeakDf = pd.read_sql_query(sql_query, isoHelper.engine)    
-                            prevPeakDf.reset_index(drop=True,inplace=True)
-                            #print("***********************findPeaks************")
-                            #print("peakDf = ", peakDf)
-                            #print("prevPeakDf = ", prevPeakDf)
-
-                            dfMerge =pd.merge(peakDf,prevPeakDf,on=['timestamp','timestamp'],how="outer",indicator=True)
-                        
-                            inactivePeaks = dfMerge[dfMerge['_merge']=='right_only']
-                            newPeaks = dfMerge[dfMerge['_merge']=='left_only']
-                            bothPeaks =  dfMerge[dfMerge['_merge']=='both']
-                            #print ("inactivePeaks=", inactivePeaks)
-                            #print ("newPeaks=", newPeaks)
-                            #print ("bothPeaks=", bothPeaks)
-
-                            for timestamp in inactivePeaks['timestamp']:
-                                sql_query = "Update  peakTable  set IsActive = 0 where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
-                                result = connection.execute(sql_query)
-
-                       
-                            newPeaks.reset_index(drop=True,inplace=True)
-                            peakDf.reset_index(drop=True,inplace=True)
-
-                            #if (len(newPeaks) > 0 and len(peakDf) >0):
-                            #    newPeaks=peakDf.loc[newPeaks.timestamp == peakDf.timestamp]
-
-                            #    newPeaks["Area"]=Area
-                            #    newPeaks["PeakEnd"] = peakDf["timestamp"]
-                            #    newPeaks["IsActive"] = True
-                            #    newPeaks["Overtime"] = newPeaks["PeakEnd"] 
-                            #    newPeaks["InitialTimestamp"] = newPeaks["EvaluatedAt"] 
-                            #    newPeaks["Prominence"] = peakDf["Prominence"]
-
-                            #    for timestamp in newPeaks['timestamp']:
-
-                            #        EvalAt = newPeaks.loc[newPeaks.timestamp == timestamp, 'EvaluatedAt']
-                            #        if (timestamp-timedelta (hours=1) > EvalAt.iloc[0] ):
-                            #            newPeaks.loc[newPeaks.timestamp == timestamp, 'PeakStart'] = timestamp-timedelta (hours=1)
-                            #        else:
-                            #            newPeaks.loc[newPeaks.timestamp == timestamp, 'PeakStart'] =  EvalAt.iloc[0]
-                                
-                            #        res = isoHelper.saveDf("peakTable", newPeaks)
-
-                    isoHelper.replaceDf(DataTbl, forecastDf)
+            isoHelper.replaceDf(DataTbl, forecastDf)
                      
- 
-                if ((isHrly==True) and (Area == 'PJM RTO')):
-                        self.CheckCPShaveHour(isoHelper)
+            peakDf = forecastDf[forecastDf['Peak'] > 0]
 
-                startTimeStamp = periodTimeStamp
+            if (len(peakDf) == 1):
+                sql_query = "into into peakSignalTbl Values (" + peakDf[0].timestamp, peakDf[0].Area, peakDf[0].Peak, peakDf[0].EvaluatedAt,  peakDf[0].timestamp  + timedelta(hours =-1)
+                result = connection.execute(sql_query)
+
+
+            if ((isHrly==True) and (Area == 'PJM RTO')):
+                    self.CheckCPShaveHour(isoHelper)
+
 
                 
-                newestEvaluatedAt = forecastDf['EvaluatedAt'].max()
-
-                RefreshDataLst =  [[Area, isHrly, newestEvaluatedAt, zeroTimeStamp]]
-                refreshDf = pd.DataFrame(RefreshDataLst, columns = ['Area', 'isHrly', 'NewEvalTime', 'StartDayTime'])
-                
-
-                isoHelper.saveDf('RefreshDataTbl', refreshDf)
-
         except BaseException as e:
             print("findPeaks",e)
         finally:

@@ -99,7 +99,7 @@ class IsodataHelpers(object):
     def emptyAllTbls(self):
 
         connection = self.engine.connect()
-        result = connection.execute("delete from peakTable")
+        #result = connection.execute("delete from peakTable")
         #result = connection.execute("delete from lmpTbl")
         #result = connection.execute("delete from loadTbl")
         #result = connection.execute("delete from psInstLoadTbl")
@@ -456,7 +456,7 @@ class IsodataHelpers(object):
 
  
         except BaseException as e:
-            print("get_latest_Forecast",e)
+            print("getStartEndForecastTimestamp",e)
   
         finally:
             return startTimeStamp, endTimeStamp
