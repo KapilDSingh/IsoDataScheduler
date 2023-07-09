@@ -146,6 +146,9 @@ class GridCPShaving(object):
                 if  ((peakStartTime <= peakDf[0].EvaluatedAt) and (peakDf[0].EvaluatedAt <= peakDf[0].timestamp)):
                     print ("Start Shaving")
 
+                elif ((peakDf[0].EvaluatedAt > peakDf[0].timestamp)):
+                    print ("Stop Shaving")
+
 
 
             if ((isHrly==True) and (Area == 'PJM RTO')):
