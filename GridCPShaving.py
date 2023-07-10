@@ -137,21 +137,24 @@ class GridCPShaving(object):
             peakDf = forecastDf[forecastDf['Peak'] > 0]
             peakDf.reset_index(drop=True,inplace=True)
 
+            if ((isHrly==True) and (len(peakDf) == 1)):
 
-            if (len(peakDf) == 1):
-                peakStartTime = peakDf[0].timestamp  + timedelta(hours =-1)
-                sql_query = "insert into peakSignalTbl Values (" + peakDf[0].timestamp, peakDf[0].Area, peakDf[0].Peak, peakDf[0].EvaluatedAt, peakStartTime  +")"
-                result = connection.execute(sql_query)
+                peakStartTime = peakDf['timestamp'][0]  + timedelta(hours =-1)
 
-                if  ((peakStartTime <= peakDf[0].EvaluatedAt) and (peakDf[0].EvaluatedAt <= peakDf[0].timestamp)):
-                    print ("Start Shaving")
+                data = [[peakDf['timestamp'][0], Area, peakDf['Peak'][0], peakDf['EvaluatedAt'][0], peakStartTime]]
 
-                elif ((peakDf[0].EvaluatedAt > peakDf[0].timestamp)):
-                    print ("Stop Shaving")
+                peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime'])
 
+                isoHelper.saveDf(DataTbl='peakSignalTbl', Data= peakSignalDf)
 
+                currentTime = datetime.now()
+                if  ((peakStartTime <= currentTime) and (currentTime <= peakDf['timestamp'][0])):
+                    print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
 
-            if ((isHrly==True) and (Area == 'PJM RTO')):
+                elif  (currentTime > peakDf['timestamp'][0]):
+                    print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
+
+                if (Area == 'PJM RTO'):
                     self.CheckCPShaveHour(isoHelper)
 
 
