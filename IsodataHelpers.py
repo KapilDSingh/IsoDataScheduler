@@ -202,6 +202,16 @@ class IsodataHelpers(object):
                 oldestTimestamp =loadDf['timestamp'].min()
                 self.clearTbl(oldestTimestamp, DataTbl)
 
+                if (isForecast == True):
+                    if (oldestTimestamp == loadDf.at[oldestTimestamp, 'EvaluatedAt']):
+                        loadQuery = "select Load from " + DataTbl +  "  where timestamp = '" + oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S")  +"'"
+
+                        connection = self.engine.connect()
+
+                        load = connection.execute(loadQuery).scalar()
+                        loadDf.at[oldestTimestamp, 'Load'] = load
+
+
             ret = self.saveDf(DataTbl, loadDf)
 
             if (ret == True):
