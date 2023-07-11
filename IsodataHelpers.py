@@ -203,15 +203,24 @@ class IsodataHelpers(object):
                 self.clearTbl(oldestTimestamp, DataTbl)
 
                 if (isForecast == True):
-                    if (oldestTimestamp == loadDf.at[oldestTimestamp, 'EvaluatedAt']):
-                        loadQuery = "select Load from " + DataTbl +  "  where timestamp = '" + oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S")  +"'"
+                   
+                        dF = loadDf.loc[oldestTimestamp ==loadDf['timestamp']]
+
+                        if (Area == 'ps'):
+                            ActualsTbl = 'psInstLoadTbl'
+                        else:
+                            ActualsTbl = 'loadTbl'
+
+
+                        loadQuery = "select Load from " + str(ActualsTbl) +  "  where timestamp = '" + oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S")  +"'"
 
                         connection = self.engine.connect()
 
                         load = connection.execute(loadQuery).scalar()
-                        loadDf.at[oldestTimestamp, 'Load'] = load
 
-
+                        if ((load != None) and (load !=0)):
+                            loadDf.loc[loadDf.timestamp == oldestTimestamp, 'LoadForecast'] = load
+        
             ret = self.saveDf(DataTbl, loadDf)
 
             if (ret == True):
