@@ -85,10 +85,12 @@ class GridCPShaving(object):
         if (Area == 'ps') and isHrly == False:
             DataTbl = 'forecastTbl'
         elif (Area == 'ps') and isHrly == True:
+            DiagnosticsTbl = 'psHrlyDiagnosticTbl'
             DataTbl = 'psHrlyForecstTbl'
         elif (Area == 'PJM RTO') and isHrly == False:
             DataTbl = 'rtoForecastTbl'
         elif (Area == 'PJM RTO') and isHrly == True:
+            DiagnosticsTbl = 'rtoHrlyDiagnosticTbl'
             DataTbl = 'rtoHrlyForecstTbl'
 
         forecastDf = None
@@ -133,28 +135,43 @@ class GridCPShaving(object):
 
             ret = isoHelper.replaceDf(DataTbl, forecastDf)
                      
-            peakDf = forecastDf[forecastDf['Peak'] > 0]
-            peakDf.reset_index(drop=True,inplace=True)
 
-            if ((isHrly==True) and (len(peakDf) == 1)):
+            if (isHrly==True) :
+                ret = isoHelper.saveDf( DiagnosticsTbl,  forecastDf)
 
-                peakStartTime = peakDf['timestamp'][0]  + timedelta(hours =-1)
+                if (ret == False):
+                    print ("1 ret =", ret)
 
-                data = [[peakDf['timestamp'][0], Area, peakDf['Peak'][0], peakDf['EvaluatedAt'][0], peakStartTime]]
+                #forecastDf.loc[0, 'Peak'] = 1
 
-                peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime'])
+                peakDf = forecastDf[forecastDf['Peak'] > 0]
+                peakDf.reset_index(drop=True,inplace=True)
 
-                isoHelper.saveDf(DataTbl='peakSignalTbl', Data= peakSignalDf)
 
-                currentTime = datetime.now()
-                if  ((peakStartTime <= currentTime) and (currentTime <= peakDf['timestamp'][0])):
-                    print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
+                if  (len(peakDf) == 1):
 
-                elif  (currentTime > peakDf['timestamp'][0]):
-                    print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
 
-                if (Area == 'PJM RTO'):
-                    self.CheckCPShaveHour(isoHelper)
+                    peakStartTime = peakDf['timestamp'][0]  + timedelta(hours =-1)
+
+                    load = peakDf['HrlyForecstLoad'][0] /  peakDf['ForecstNumReads']
+
+                    data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], peakDf['EvaluatedAt'][0], peakStartTime, peakDf['ForecstNumReads'][0], peakDf['HrlyForecstLoad'][0], load.loc[0]]]
+
+                    peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad'])
+
+                    ret= isoHelper.saveDf(DataTbl='peakSignalTbl', Data= peakSignalDf)
+                    if (ret == False):
+                        print ("2 ret =", ret)
+
+                    currentTime = datetime.now()
+                    if  ((peakStartTime <= currentTime) and (currentTime <= peakDf['timestamp'][0])):
+                        print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
+
+                    elif  (currentTime > peakDf['timestamp'][0]):
+                        print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
+
+                    if (Area == 'PJM RTO'):
+                        self.CheckCPShaveHour(isoHelper)
 
 
                 
