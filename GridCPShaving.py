@@ -20,11 +20,11 @@ class GridCPShaving(object):
             
             if (Area == 'ps'):
                 maxLoadHeight = 3000
-                prominenceHgt = 10
+                prominenceHgt = 3
 
             else:
                 maxLoadHeight = 45000
-                prominenceHgt = 45
+                prominenceHgt = 8
 
             if (isHrly == True):
                 divisor = forecastDf.ForecstNumReads
