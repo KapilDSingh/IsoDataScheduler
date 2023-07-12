@@ -129,10 +129,9 @@ class GridCPShaving(object):
             forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
             forecastDf.reset_index(drop =True, inplace=True)
 
-
             forecastDf, peakProminence = self.peakSignal(forecastDf, Area, isHrly)
 
-            isoHelper.replaceDf(DataTbl, forecastDf)
+            ret = isoHelper.replaceDf(DataTbl, forecastDf)
                      
             peakDf = forecastDf[forecastDf['Peak'] > 0]
             peakDf.reset_index(drop=True,inplace=True)
@@ -175,8 +174,8 @@ class GridCPShaving(object):
 
             sql_query = "SELECT TOP (5) timestamp \
                 FROM   rtoHrlyForecstTbl \
-            WHERE (Peak > 0) AND (timestamp >= '2021-6-1') and \
-            (timestamp < '2021-10-1') and \
+            WHERE (Peak > 0) AND (timestamp >= '2023-6-1') and \
+            (timestamp < '2023-10-1') and \
             (HrlyForecstLoad / ForecstNumReads) > 137000 \
             order by (HrlyForecstLoad / ForecstNumReads) desc"
 

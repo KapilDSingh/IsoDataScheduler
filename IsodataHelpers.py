@@ -42,6 +42,7 @@ class IsodataHelpers(object):
 
         except BaseException as e:
 
+          ret = False
           print("Save DF Unexpected error:", e)
 
         finally:
