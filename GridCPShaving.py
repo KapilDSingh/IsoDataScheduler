@@ -24,7 +24,7 @@ class GridCPShaving(object):
 
             else:
                 maxLoadHeight = 45000
-                prominenceHgt = 8
+                prominenceHgt = 4
 
             if (isHrly == True):
                 divisor = forecastDf.ForecstNumReads
@@ -150,14 +150,25 @@ class GridCPShaving(object):
 
                 if  (len(peakDf) == 1):
 
+                    peakOn = False
 
                     peakStartTime = peakDf['timestamp'][0]  + timedelta(hours =-1)
 
                     load = peakDf['HrlyForecstLoad'][0] /  peakDf['ForecstNumReads']
 
-                    data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], peakDf['EvaluatedAt'][0], peakStartTime, peakDf['ForecstNumReads'][0], peakDf['HrlyForecstLoad'][0], load.loc[0]]]
+                    currentTime = datetime.now()
+                    if  ((peakStartTime <= currentTime) and (currentTime <= peakDf['timestamp'][0])):
+                        peakOn = True
+                        print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
 
-                    peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad'])
+                    elif  (currentTime > peakDf['timestamp'][0]):
+                        peakOn = False
+                        print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
+
+
+                    data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], peakDf['EvaluatedAt'][0], peakStartTime, peakDf['ForecstNumReads'][0], peakDf['HrlyForecstLoad'][0], load.loc[0], peakOn]]
+
+                    peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad', 'PeakOn'])
 
                     ret= isoHelper.saveDf(DataTbl='peakSignalTbl', Data= peakSignalDf)
                     if (ret == False):
