@@ -28,6 +28,7 @@
     <Compile Include="DataMiner.py" />
     <Compile Include="elsServerApp.py" />
     <Compile Include="GridCPShaving.py" />
+    <Compile Include="inverterHelper.py" />
     <Compile Include="IsodataHelpers.py" />
     <Compile Include="isoDataScheduler.py" />
     <Compile Include="meterData.py" />

@@ -34,6 +34,9 @@ class MeterData(object):
     def fetchMeterData(self, meter,  numReads, isoHelper):
 
         try:
+            timestamp = None
+            KW = None
+
             numReads = str(numReads)     
             r = self.http.request('GET','https://io.ekmpush.com/readMeter?key=NjUyMzc0MjQ6Z3NaVmhEd20&meters='+ meter + '&ver=v4&fmt=json&cnt=' + numReads + '&tz=America~New_York&fields=RMS_Volts_Ln_1~RMS_Volts_Ln_2~RMS_Volts_Ln_3~RMS_Watts_Tot~Power_Factor_Ln_1~Power_Factor_Ln_2~Power_Factor_Ln_3&status=good ')
             jsonMeter = json.loads(r.data)
@@ -53,18 +56,31 @@ class MeterData(object):
            'Power_Factor_Ln_1': float, 'Power_Factor_Ln_2': float, 'Power_Factor_Ln_3': float})
 
             oldestTimestamp =meterDf['timestamp'].min()
+            newestTimeStamp = meterDf['timestamp'].max()
+
             isoHelper.clearTbl(oldestTimestamp, 'meterTbl')
 
             isoHelper.saveDf('meterTbl', meterDf)
 
             meterDf.set_index("timestamp", inplace = True)
+
+            if (len(meterDf.index) == 1):
+
+                timestamp = pd.to_datetime(meterDf.index[0])
+                KW = meterDf['RMS_Watts_Tot'][0] / 1000
+            else:
+                timestamp = None
+                KW = None
+
+
             self.get_current_hr_consumption(meter, meterDf, isoHelper)
 
         except Exception as e:
           print(e)
           print("Fetch Meter Data Unexpected error:",e)
+
         finally:
-            return
+            return timestamp, KW
 
 
     
