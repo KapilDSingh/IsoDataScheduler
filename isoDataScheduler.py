@@ -15,6 +15,9 @@ from datetime import datetime
 from pytz import timezone
 from GridCPShaving import GridCPShaving
 from datetime import datetime, timedelta
+
+from inverterHelper import regDataHelper as inverterDataHelper
+
 def main():
     def putIsoData(dataMiner, isoHelper):
         print(" Fetch LMP, InstLoad --- 1")
@@ -26,7 +29,6 @@ def main():
         print("Fetch Meter Data --- 3")
         #dataMiner.fetch_hourlyMeteredLoad(True, 'CurrentYear', True,isoHelper)
         #dataMiner.fetch_hourlyMeteredLoad(False, 'CurrentYear', True,isoHelper)
-        meterData.fetchMeterData('550001081', 1, isoHelper)
         #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
         print("Fetch Load Forecast --- 4")
         dataMiner.fetch_LoadForecast( 'ps', isoHelper,GCPShave)
@@ -43,6 +45,7 @@ def main():
     isoHelper = IsodataHelpers()
     meterData = MeterData()
     GCPShave = GridCPShaving()
+    inverterHelper = inverterDataHelper()
 
     relayState =0
 
@@ -53,7 +56,7 @@ def main():
     eastern = timezone('US/Eastern')
 
     oldestTimeStamp =  datetime.now() - timedelta (days =60)
-    #meterData.fetchMeterData('550001081', 1000, isoHelper)
+    meterData.fetchMeterData('550001081', 1000, isoHelper)
     currentDate =datetime.today();
     #startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1)
     #endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1)
@@ -97,32 +100,47 @@ def main():
     #isoHelper.mergeRTOHrlySeries(oldestMergeTimeStamp)
 
 
+    modbusClient =  inverterHelper.connectInverter()
 
     while True:
-        putIsoData(dataMiner,isoHelper)
 
-        Results = isoHelper.call_procedure("[ISPeakShavingON]", [])
-        if (len(Results) == 1):
-            timestamp = Results[0][0]
-            Results = isoHelper.call_procedure("[TurnPeakShavingOn] ?", timestamp)
-            if (len(Results) == 1):
-               relayState =1
+        #putIsoData(dataMiner,isoHelper)
+ 
+        timestamp, KW = meterData.fetchMeterData('550001081', 1, isoHelper)
 
-        Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
-        if (len(Results) == 1):
-            timestamp = Results[0][0]
-            Results = isoHelper.call_procedure("[ChkShavingOff] ?", timestamp)
-            if (len(Results) == 0):
-                Results = isoHelper.call_procedure("[ChkLoadDecreasing] ?", timestamp)
-                if (len(Results) == 1):
-                        relayState = 0
-                        Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
 
-                else:
-                    Results = isoHelper.call_procedure("[ChkOverTime] ?", timestamp)
-                    if (len(Results) ==1):
-                            relayState = 0
-                            Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
+        if (modbusClient != None):
+
+            valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
+
+            #inverterHelper.updateDBRegValues(modbusClient)
+            batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient)
+            print ("Battery Voltage = ", batteryVoltage, "Charging Current =  ", chargingCurrent)
+
+
+
+        #Results = isoHelper.call_procedure("[ISPeakShavingON]", [])
+        #if (len(Results) == 1):
+        #    timestamp = Results[0][0]
+        #    Results = isoHelper.call_procedure("[TurnPeakShavingOn] ?", timestamp)
+        #    if (len(Results) == 1):
+        #       relayState =1
+
+        #Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
+        #if (len(Results) == 1):
+        #    timestamp = Results[0][0]
+        #    Results = isoHelper.call_procedure("[ChkShavingOff] ?", timestamp)
+        #    if (len(Results) == 0):
+        #        Results = isoHelper.call_procedure("[ChkLoadDecreasing] ?", timestamp)
+        #        if (len(Results) == 1):
+        #                relayState = 0
+        #                Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
+
+        #        else:
+        #            Results = isoHelper.call_procedure("[ChkOverTime] ?", timestamp)
+        #            if (len(Results) ==1):
+        #                    relayState = 0
+        #                    Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
               
         #isoHelper.SetRelayState(relayState)
 
