@@ -21,6 +21,7 @@ from sqlalchemy import update
 from sqlalchemy.orm import Session
 from IsodataHelpers import IsodataHelpers
 from pymodbus.payload import BinaryPayloadBuilder
+from simple_pid import PID
 
 class regDataHelper(object):
 
@@ -146,16 +147,12 @@ class regDataHelper(object):
             return  valType, regValue
 
 
-    def chargeBatteries(self, modbusClient):
+    def chargeBatteries(self, modbusClient, pid):
 
         try:
 
-
             temperatureCelsius= self.readRegValue(modbusClient, 157, 1, 'int16')
-
             temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 34
-
-            print (temperatureFahrenheit)
 
             if (temperatureFahrenheit < 79):
                   self.writeRegValue(modbusClient, 1024, 'uint16' , 50)
@@ -164,19 +161,19 @@ class regDataHelper(object):
             elif (temperatureFahrenheit >= 82):
                   self.writeRegValue(modbusClient, 1024, 'uint16' , 0)
 
-
             batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
-
             batteryVoltage = float(batteryVoltage)
-
             batteryVoltage = batteryVoltage / 340
 
             chargingCurrent = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
 
-            newChgCurrent =    max(( (14.3 - batteryVoltage) / (14.3 - 11) )* 20, 0)
+            newChgCurrent = pid (batteryVoltage)
 
-            if (abs(newChgCurrent - chargingCurrent) > 0.2):
-                self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
+            #newChgCurrent =abs (((14.3 - batteryVoltage) / (14.3 - 11) )* 20)
+
+            #if (abs(newChgCurrent - chargingCurrent) > 0.2):
+            
+            self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
 
 
 

@@ -102,6 +102,10 @@ def main():
 
     modbusClient =  inverterHelper.connectInverter()
 
+    pid = PID(1, 0.1, 0.05, setpoint=14.1)
+    pid.sample_time = 1  # Update every 1 second
+
+
     while True:
 
         #putIsoData(dataMiner,isoHelper)
@@ -114,8 +118,7 @@ def main():
             valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
 
             #inverterHelper.updateDBRegValues(modbusClient)
-            batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient)
-            print ("Battery Voltage = ", batteryVoltage, "Charging Current =  ", chargingCurrent)
+            batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pid)
 
 
 
