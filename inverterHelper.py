@@ -173,7 +173,7 @@ class regDataHelper(object):
 
             chargingCurrent = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
 
-            newChgCurrent =( (14.3 - batteryVoltage) / (14 - 11) )* 20
+            newChgCurrent =    max(( (14.3 - batteryVoltage) / (14.3 - 11) )* 20, 0)
 
             if (abs(newChgCurrent - chargingCurrent) > 0.2):
                 self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
