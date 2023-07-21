@@ -150,6 +150,8 @@ class regDataHelper(object):
     def chargeBatteries(self, modbusClient, pid):
 
         try:
+            batteryVoltage = None
+            chargingCurrent = None
 
             temperatureCelsius= self.readRegValue(modbusClient, 157, 1, 'int16')
             temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 34
@@ -168,6 +170,7 @@ class regDataHelper(object):
             chargingCurrent = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
 
             newChgCurrent = pid (batteryVoltage)
+            newChgCurrent = abs(newChgCurrent)
 
             #newChgCurrent =abs (((14.3 - batteryVoltage) / (14.3 - 11) )* 20)
 
@@ -176,24 +179,6 @@ class regDataHelper(object):
             self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
 
 
-
-            #if (batteryVoltage  <= 13.3):
-            #     self.writeRegValue(modbusClient, 1024, 'uint16' , 50)
-            #     self.writeRegValue(modbusClient, 1626, 'uint16' , 100)
-            #elif (batteryVoltage  <= 13.5):
-            #    self.writeRegValue(modbusClient, 1024, 'uint16' , 50)
-            #    self.writeRegValue(modbusClient, 1626, 'uint16' , 70)
-            #elif (batteryVoltage  <= 13.8):
-            #    self.writeRegValue(modbusClient, 1024, 'uint16' , 50)
-            #    self.writeRegValue(modbusClient, 1626, 'uint16' , 50)
-                 
-            #elif (batteryVoltage  <= 14.0):
-            #    self.writeRegValue(modbusClient, 1024, 'uint16' , 50)
-            #    self.writeRegValue(modbusClient, 1626, 'uint16' , 30)
-            #elif (batteryVoltage <= 14.3):
-            #     self.writeRegValue(modbusClient, 1024, 'uint16' , 13)
-            #else:
-            #     self.writeRegValue(modbusClient, 1024, 'uint16' , 11)
 
             print (batteryVoltage)
         except BaseException as e:

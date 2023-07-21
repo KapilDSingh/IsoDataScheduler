@@ -17,6 +17,8 @@ from GridCPShaving import GridCPShaving
 from datetime import datetime, timedelta
 
 from inverterHelper import regDataHelper as inverterDataHelper
+from simple_pid import PID
+
 
 def main():
     def putIsoData(dataMiner, isoHelper):
@@ -102,8 +104,13 @@ def main():
 
     modbusClient =  inverterHelper.connectInverter()
 
-    pid = PID(1, 0.1, 0.05, setpoint=14.1)
-    pid.sample_time = 1  # Update every 1 second
+    valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
+    valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16', 50)
+
+
+    pid = PID(1, 0.1, 0.05, setpoint=14.0)
+    pid.sample_time = 30  # Update every 30 second
+    pid.output_limits = (0, 15)
 
 
     while True:
@@ -115,7 +122,6 @@ def main():
 
         if (modbusClient != None):
 
-            valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
 
             #inverterHelper.updateDBRegValues(modbusClient)
             batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pid)
@@ -148,6 +154,9 @@ def main():
         #isoHelper.SetRelayState(relayState)
 
         time.sleep(60)
+
+
+    valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1002, 'int16', 1)
 
 main()
 
