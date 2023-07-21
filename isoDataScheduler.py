@@ -115,7 +115,7 @@ def main():
 
     while True:
 
-        #putIsoData(dataMiner,isoHelper)
+        putIsoData(dataMiner,isoHelper)
  
         timestamp, KW = meterData.fetchMeterData('550001081', 1, isoHelper)
 
