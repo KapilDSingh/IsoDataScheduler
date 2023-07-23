@@ -86,10 +86,8 @@ class regDataHelper(object):
 
             else :
                 regValue=None
-  
-         
-
-            print(result.registers)
+                   
+            print("readRegValue, Register = ", regAddress, " Register Value = ", regValue)
 
         except BaseException as e:
                 print("readRegValue ",e)
@@ -130,21 +128,124 @@ class regDataHelper(object):
                 regValue=None
   
             registers = builder.to_registers()
-            print("Writing Registers:")
-            print(registers)
-            print("\n")
+            
             payload = builder.build()
 
             # We can write registers
             rr =  modbusClient.write_registers(regAddress, registers, unit=1)
             assert not rr.isError()
 
+            print("writeRegValue, Register = ", regAddress, " Register Value = ", regValue)
+
         except BaseException as e:
+                print("Exception writeRegValue, Register = ", regAddress, " Register Value = ", regValue)
                 print("writeRegValue ",e)
                 regValue=None
   
         finally:
             return  valType, regValue
+
+    #def shavePeak(self, modbusClient, meterData, isoHelper):
+
+    #    try:
+    #        batteryVoltage = None
+    #        Current = None
+    #        disChargingKW = None
+    #        currentKW = None
+
+    #        temperatureCelsius= self.readRegValue(modbusClient, 157, 1, 'int16')
+    #        temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 34
+
+    #        if (temperatureFahrenheit < 78):
+    #              self.writeRegValue(modbusClient, 1627, 'uint16' , 74*10)
+    #        elif (temperatureFahrenheit < 82):
+    #              self.writeRegValue(modbusClient, 1627, 'uint16' , 30 * 10)
+    #        elif (temperatureFahrenheit >= 82):
+    #              self.writeRegValue(modbusClient, 1627, 'uint16' , 0)
+
+    #        batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
+    #        batteryVoltage = float(batteryVoltage)
+    #        batteryVoltage = batteryVoltage / 340
+
+    #        Current = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
+
+    #        timestamp, KW, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
+
+    #        if (State_Watts_Dir == 8):
+    #            KW = -KW
+
+
+    #        currentKW =  float(self.readRegValue(modbusClient, 1024, 1, 'int16')) / 10
+
+    #        disChargingKW = 0
+
+    #        if (batteryVoltage >= 11.3):
+    #  
+    #            disChargingKW = currentKW - KW + 0.5
+
+    #        else:
+    #            disChargingKW = 0
+
+    #        print ("currentDirection =", State_Watts_Dir, " KW = ", KW, " Current KW = ", currentKW, " disChargingKW = ", disChargingKW)
+
+
+    #        valType, regValue =  self.writeRegValue(modbusClient, 1024, 'int16' , int(round (disChargingKW * 10)))
+
+    #    except BaseException as e:
+    #            print("shavePeak ",e)
+  
+    #    finally:
+    #        #print ("DISCHARGING batteryVoltage = ", batteryVoltage,  " Current = ", Current, " currentKW = ", currentKW,  " disChargingKW = ", disChargingKW)
+    #        return  batteryVoltage, Current, currentKW,  disChargingKW
+
+
+    def peakShave(self, modbusClient,  meterData, isoHelper, pid):
+        try:
+            batteryVoltage = None
+            CurrentAmps = None
+            newAmps = None
+            supplyKW = None
+            loadKW = None
+
+            temperatureCelsius= self.readRegValue(modbusClient, 157, 1, 'int16')
+            temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 34
+
+            if (temperatureFahrenheit < 80):
+                  self.writeRegValue(modbusClient, 1024, 'int16' , -300)
+            elif (temperatureFahrenheit < 84):
+                  self.writeRegValue(modbusClient, 1024, 'int16' , -100)
+            elif (temperatureFahrenheit >= 84):
+                  self.writeRegValue(modbusClient, 1024, 'int16' , 0)
+
+            batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
+            batteryVoltage = float(batteryVoltage)
+            batteryVoltage = batteryVoltage / 340
+
+            CurrentAmps = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
+
+            timestamp, loadKW, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
+
+           # if ((State_Watts_Dir == 8) or (State_Watts_Dir == 1)):
+
+            if (State_Watts_Dir > 1):
+                loadKW = -loadKW
+
+            newAmps = pid (loadKW)
+            p, i, d = pid.components
+            print ("p= ", p, " i = ", i, " d = ",d)
+
+            self.writeRegValue(modbusClient, 1627, 'uint16' , int (newAmps * 10))
+
+            print ("DISCHARGING loadKW = ", loadKW," newAmps = ", newAmps, "currentDirection =", State_Watts_Dir)
+
+            #else:
+            #    print("Illegal Current Direction")
+
+        except BaseException as e:
+                print("peakShaving ",e)
+  
+        finally:
+            return  loadKW, newAmps
 
 
     def chargeBatteries(self, modbusClient, pid):
@@ -157,11 +258,11 @@ class regDataHelper(object):
             temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 34
 
             if (temperatureFahrenheit < 79):
-                  self.writeRegValue(modbusClient, 1024, 'uint16' , 50)
+                  self.writeRegValue(modbusClient, 1024, 'int16' , 100)
             elif (temperatureFahrenheit < 82):
-                  self.writeRegValue(modbusClient, 1024, 'uint16' , 10)
+                  self.writeRegValue(modbusClient, 1024, 'int16' , 10)
             elif (temperatureFahrenheit >= 82):
-                  self.writeRegValue(modbusClient, 1024, 'uint16' , 0)
+                  self.writeRegValue(modbusClient, 1024, 'int16' , 0)
 
             batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
             batteryVoltage = float(batteryVoltage)
@@ -171,27 +272,18 @@ class regDataHelper(object):
 
             newChgCurrent = pid (batteryVoltage)
             newChgCurrent = abs(newChgCurrent)
-
-            #newChgCurrent =abs (((14.3 - batteryVoltage) / (14.3 - 11) )* 20)
-
-            #if (abs(newChgCurrent - chargingCurrent) > 0.2):
             
             self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
 
-
-
-            print (batteryVoltage)
+            #print ("CHARGING batteryVoltage = ", batteryVoltage," newChgCurrent = ", newChgCurrent)
         except BaseException as e:
-                print("writeRegValue ",e)
-                regValue=None
+                print("chargeBatteries ",e)
   
         finally:
             return  batteryVoltage, chargingCurrent
 
     def updateDBRegValues(self,  modbusClient): 
-
         try:
-
             roRegDf = self.getReg(0,  "11word",  "InvRORegisters")
 
             regValue =self.updateRegValue(roRegDf.iloc[0].squeeze(),  "InvRORegisters", modbusClient)
@@ -373,9 +465,7 @@ class regDataHelper(object):
             else :
                 regValue=None
   
-         
 
-            print(result.registers)
 
         except BaseException as e:
                 print("readRegValue ",e)
@@ -384,52 +474,52 @@ class regDataHelper(object):
         finally:
             return  regValue
 
-    def writeRegValue(self, modbusClient, regAddress, valType, regValue):
+    #def writeRegValue(self, modbusClient, regAddress, valType, regValue):
 
-        try:
+    #    try:
 
-            builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
+    #        builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
     
-            if (valType == 'string'):
+    #        if (valType == 'string'):
 
-                builder.add_string(regValue)
+    #            builder.add_string(regValue)
 
-            elif (valType == 'float'):
-                builder.add_32bit_float(regValue)
+    #        elif (valType == 'float'):
+    #            builder.add_32bit_float(regValue)
 
-            elif (valType == 'uint16'):
+    #        elif (valType == 'uint16'):
 
-                builder.add_16bit_uint(regValue)
+    #            builder.add_16bit_uint(regValue)
 
-            elif (valType == 'int16'):
+    #        elif (valType == 'int16'):
 
-                builder.add_16bit_int(regValue)
+    #            builder.add_16bit_int(regValue)
 
-            elif (valType == 'uint64'):
+    #        elif (valType == 'uint64'):
 
-                builder.add_64bit_uint(regValue)
+    #            builder.add_64bit_uint(regValue)
 
-            elif (valType == 'bitfield'):
+    #        elif (valType == 'bitfield'):
 
-                builder.add_bits(regValue)
-            else :
-                regValue=None
+    #            builder.add_bits(regValue)
+    #        else :
+    #            regValue=None
   
-            registers = builder.to_registers()
-            print("Writing Registers:")
-            print(registers)
-            print("\n")
-            payload = builder.build()
+    #        registers = builder.to_registers()
+    #        print("Writing Registers:")
+    #        print(registers)
+    #        print("\n")
+    #        payload = builder.build()
 
-            # We can write registers
-            rr =  modbusClient.write_registers(regAddress, registers, unit=1)
-            assert not rr.isError()
+    #        # We can write registers
+    #        rr =  modbusClient.write_registers(regAddress, registers, unit=1)
+    #        assert not rr.isError()
 
-        except BaseException as e:
-                print("writeRegValue ",e)
-                regValue=None
+    #    except BaseException as e:
+    #            print("writeRegValue ",e)
+    #            regValue=None
   
-        finally:
-            return  valType, regValue
+    #    finally:
+    #        return  valType, regValue
 
 

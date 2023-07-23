@@ -23,7 +23,7 @@ import pyperclip
 import IsodataHelpers 
 import matplotlib.pyplot as plt
 import numpy as np
-
+from pprint import pprint as pp
 
 class MeterData(object):
 
@@ -36,15 +36,17 @@ class MeterData(object):
         try:
             timestamp = None
             KW = None
+            State_Watts_Dir = None
 
             numReads = str(numReads)     
-            r = self.http.request('GET','https://io.ekmpush.com/readMeter?key=NjUyMzc0MjQ6Z3NaVmhEd20&meters='+ meter + '&ver=v4&fmt=json&cnt=' + numReads + '&tz=America~New_York&fields=RMS_Volts_Ln_1~RMS_Volts_Ln_2~RMS_Volts_Ln_3~RMS_Watts_Tot~Power_Factor_Ln_1~Power_Factor_Ln_2~Power_Factor_Ln_3&status=good ')
+            r = self.http.request('GET','https://io.ekmpush.com/readMeter?key=NjUyMzc0MjQ6Z3NaVmhEd20&meters='+ meter + '&ver=v4&fmt=json&cnt=' + numReads + \
+                '&tz=America~New_York&fields=RMS_Watts_Tot~State_Watts_Dir&status=good ')
             jsonMeter = json.loads(r.data)
             jsonElectricData = jsonMeter['readMeter']['ReadSet'][0]['ReadData']
             meterDf = pd.DataFrame(jsonElectricData)
             meterDf.insert (1, 'timestamp',  pd.to_datetime(meterDf['Date'] + ' '+meterDf['Time']),allow_duplicates = False) 
             meterDf.insert(1, 'MeterID', meter, allow_duplicates = True)
-      
+     
             timezone = pytz.timezone("America/New_York")
       
             meterDf['timestamp'] = [pd.Timestamp.round(row, 'min') for row in  meterDf['timestamp']]
@@ -52,8 +54,7 @@ class MeterData(object):
 
             meterDf.drop(columns=['Good','Date', 'Time','Time_Stamp_UTC_ms'], inplace=True)
 
-            meterDf = meterDf.astype({'RMS_Watts_Tot': float,  'RMS_Volts_Ln_1': float,  'RMS_Volts_Ln_2': float,  'RMS_Volts_Ln_3': float,  
-           'Power_Factor_Ln_1': float, 'Power_Factor_Ln_2': float, 'Power_Factor_Ln_3': float})
+            meterDf = meterDf.astype({'RMS_Watts_Tot': float, 'State_Watts_Dir': int})
 
             oldestTimestamp =meterDf['timestamp'].min()
             newestTimeStamp = meterDf['timestamp'].max()
@@ -68,10 +69,11 @@ class MeterData(object):
 
                 timestamp = pd.to_datetime(meterDf.index[0])
                 KW = meterDf['RMS_Watts_Tot'][0] / 1000
+                State_Watts_Dir = meterDf['State_Watts_Dir'][0]
             else:
                 timestamp = None
                 KW = None
-
+                State_Watts_Dir = None
 
             self.get_current_hr_consumption(meter, meterDf, isoHelper)
 
@@ -80,7 +82,7 @@ class MeterData(object):
           print("Fetch Meter Data Unexpected error:",e)
 
         finally:
-            return timestamp, KW
+            return timestamp, KW, State_Watts_Dir
 
 
     
@@ -165,12 +167,7 @@ class MeterData(object):
                 meterTblQuery = "SELECT  [MeterID]\
                                     ,[timestamp]\
                                     ,[RMS_Watts_Tot]\
-                                    ,[RMS_Volts_Ln_1]\
-                                    ,[RMS_Volts_Ln_2]\
-                                    ,[RMS_Volts_Ln_3]\
-                                    ,[Power_Factor_Ln_1]\
-                                    ,[Power_Factor_Ln_2]\
-                                    ,[Power_Factor_Ln_3]\
+                                    ,[State_Watts_Dir]\
                                     FROM [ISODB].[dbo].[meterTbl] where (timestamp  >  CONVERT(DATETIME,'" + TimeStr + "')) and ( MeterID  = '" + meter + "')"
                  
                 meterDf = pd.read_sql(meterTblQuery,isoHelper.engine)
@@ -179,15 +176,13 @@ class MeterData(object):
                 meterDf.reset_index(drop=True,inplace=True)
                 meterDf.set_index('timestamp', inplace=True) 
             
-            meterDf.drop(columns=['RMS_Volts_Ln_2','RMS_Volts_Ln_3', 'Power_Factor_Ln_1','Power_Factor_Ln_2','Power_Factor_Ln_3'], inplace=True)
-
-            hrlyDataDf = meterDf.resample('H',label='right', closed='right').agg({"RMS_Volts_Ln_1":'size',"RMS_Watts_Tot":'sum'})
+            hrlyDataDf = meterDf.resample('H',label='right', closed='right').agg({"State_Watts_Dir":'size',"RMS_Watts_Tot":'sum'})
 
             hrlyDataDf.reset_index(inplace=True)
             #print(hrlyDataDf)
             hrlyDataDf.insert(1, 'MeterID', meter, allow_duplicates = True)
            
-            hrlyDataDf.rename(columns={"RMS_Volts_Ln_1": "NumReads",  "RMS_Watts_Tot":"HrlyWatts"},inplace =True)
+            hrlyDataDf.rename(columns={"State_Watts_Dir": "NumReads",  "RMS_Watts_Tot":"HrlyWatts"},inplace =True)
 
             oldestTimestamp =hrlyDataDf['timestamp'].min()
             isoHelper.clearTbl(oldestTimestamp, HrlyTbl)

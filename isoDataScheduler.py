@@ -108,48 +108,52 @@ def main():
     valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16', 50)
 
 
-    pid = PID(1, 0.1, 0.05, setpoint=14.0)
-    pid.sample_time = 30  # Update every 30 second
-    pid.output_limits = (0, 15)
+    pidCharge = PID(1, 0.1, 0.05, setpoint=14.0)
+    pidCharge.sample_time = 30  # Update every 30 second
+    pidCharge.output_limits = (0, 15)
 
+    pidDisCharge = PID(-0.01, -0.01, 0, setpoint=0.5)
+    p, i, d = pidDisCharge.components
+    pidDisCharge.sample_time = 60 # Update every 60 second
+    pidDisCharge.output_limits = (0, 74)
+    print ("Initial p= ", p, " i = ", i, " d = ",d)
 
     while True:
 
         putIsoData(dataMiner,isoHelper)
  
-        timestamp, KW = meterData.fetchMeterData('550001081', 1, isoHelper)
 
 
         if (modbusClient != None):
 
 
             #inverterHelper.updateDBRegValues(modbusClient)
-            batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pid)
+             batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
+             #loadKW, newAmps= inverterHelper.peakShave(modbusClient, meterData, isoHelper, pidDisCharge)
 
 
+            #Results = isoHelper.call_procedure("[ISPeakShavingON]", [])
+            #if (len(Results) == 1):
+            #    timestamp = Results[0][0]
+            #    Results = isoHelper.call_procedure("[TurnPeakShavingOn] ?", timestamp)
+            #    if (len(Results) == 1):
+            #       relayState =1
 
-        #Results = isoHelper.call_procedure("[ISPeakShavingON]", [])
-        #if (len(Results) == 1):
-        #    timestamp = Results[0][0]
-        #    Results = isoHelper.call_procedure("[TurnPeakShavingOn] ?", timestamp)
-        #    if (len(Results) == 1):
-        #       relayState =1
+            #Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
+            #if (len(Results) == 1):
+            #    timestamp = Results[0][0]
+            #    Results = isoHelper.call_procedure("[ChkShavingOff] ?", timestamp)
+            #    if (len(Results) == 0):
+            #        Results = isoHelper.call_procedure("[ChkLoadDecreasing] ?", timestamp)
+            #        if (len(Results) == 1):
+            #                relayState = 0
+            #                Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
 
-        #Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
-        #if (len(Results) == 1):
-        #    timestamp = Results[0][0]
-        #    Results = isoHelper.call_procedure("[ChkShavingOff] ?", timestamp)
-        #    if (len(Results) == 0):
-        #        Results = isoHelper.call_procedure("[ChkLoadDecreasing] ?", timestamp)
-        #        if (len(Results) == 1):
-        #                relayState = 0
-        #                Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
-
-        #        else:
-        #            Results = isoHelper.call_procedure("[ChkOverTime] ?", timestamp)
-        #            if (len(Results) ==1):
-        #                    relayState = 0
-        #                    Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
+            #        else:
+            #            Results = isoHelper.call_procedure("[ChkOverTime] ?", timestamp)
+            #            if (len(Results) ==1):
+            #                    relayState = 0
+            #                    Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
               
         #isoHelper.SetRelayState(relayState)
 
