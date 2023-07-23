@@ -255,14 +255,14 @@ class regDataHelper(object):
             chargingCurrent = None
 
             temperatureCelsius= self.readRegValue(modbusClient, 157, 1, 'int16')
-            temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 34
+            temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 32
 
-            if (temperatureFahrenheit < 79):
+            if (temperatureFahrenheit < 82):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 100)
-            elif (temperatureFahrenheit < 82):
+            elif (temperatureFahrenheit < 85):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 10)
-            elif (temperatureFahrenheit >= 82):
-                  self.writeRegValue(modbusClient, 1024, 'int16' , 0)
+            elif (temperatureFahrenheit >= 85):
+                  self.writeRegValue(modbusClient, 1024, 'int16' , 5)
 
             batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
             batteryVoltage = float(batteryVoltage)
@@ -425,101 +425,4 @@ class regDataHelper(object):
             roAllRegDf.apply(self.updateRegValue, axis = 1, DataTbl = DataTbl, modbusClient =modbusClient)
             return roAllRegDf
 
-    def readRegValue(self, modbusClient, regAddress, size, valType, bitIdx = None):
-
-        try:
-            readRegValue = None
-            result = modbusClient.read_holding_registers  (regAddress, size, unit=1)
-            decoder = BinaryPayloadDecoder.fromRegisters(result.registers, byteorder=Endian.Big, wordorder=Endian.Big)
-
-            if (valType == 'string'):
-
-                regByteValue = decoder.decode_string(int(size))
-                regValue = regByteValue.decode()
-
-            elif (valType == 'uint16'):
-
-                regStrValue =decoder.decode_16bit_uint()
-                regValue = str(regStrValue)
-     
-            elif (valType == 'int16'):
-
-                regValue = str(decoder.decode_16bit_int())
-                regValue = str(regValue)
-
-            elif (valType == 'uint64'):
-
-                regValue = str(decoder.decode_64bit_uint())
-                regValue = str(regValue)
-
-            elif (valType == 'bitfield'):
-
-                bits1Value = []
-                bits2Value = decoder.decode_bits()
-                bits1Value += decoder.decode_bits()
-                if (bitIdx < 8):
-                    regValue = str(bits1Value[bitIdx])
-                else:
-                    regValue = str(bits2Value[bitIdx - 8])
-
-            else :
-                regValue=None
-  
-
-
-        except BaseException as e:
-                print("readRegValue ",e)
-                return None
-  
-        finally:
-            return  regValue
-
-    #def writeRegValue(self, modbusClient, regAddress, valType, regValue):
-
-    #    try:
-
-    #        builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
-    
-    #        if (valType == 'string'):
-
-    #            builder.add_string(regValue)
-
-    #        elif (valType == 'float'):
-    #            builder.add_32bit_float(regValue)
-
-    #        elif (valType == 'uint16'):
-
-    #            builder.add_16bit_uint(regValue)
-
-    #        elif (valType == 'int16'):
-
-    #            builder.add_16bit_int(regValue)
-
-    #        elif (valType == 'uint64'):
-
-    #            builder.add_64bit_uint(regValue)
-
-    #        elif (valType == 'bitfield'):
-
-    #            builder.add_bits(regValue)
-    #        else :
-    #            regValue=None
-  
-    #        registers = builder.to_registers()
-    #        print("Writing Registers:")
-    #        print(registers)
-    #        print("\n")
-    #        payload = builder.build()
-
-    #        # We can write registers
-    #        rr =  modbusClient.write_registers(regAddress, registers, unit=1)
-    #        assert not rr.isError()
-
-    #    except BaseException as e:
-    #            print("writeRegValue ",e)
-    #            regValue=None
-  
-    #    finally:
-    #        return  valType, regValue
-
-
+ 
