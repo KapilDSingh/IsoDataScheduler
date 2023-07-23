@@ -105,7 +105,7 @@ def main():
     modbusClient =  inverterHelper.connectInverter()
 
     valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
-    valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16', 50)
+    valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16',100)
 
 
     pidCharge = PID(1, 0.1, 0.05, setpoint=14.0)
