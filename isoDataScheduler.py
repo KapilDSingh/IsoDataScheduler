@@ -105,14 +105,14 @@ def main():
     modbusClient =  inverterHelper.connectInverter()
 
     valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
-    valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16',100)
+    valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16',0)
 
 
     pidCharge = PID(1, 0.1, 0.05, setpoint=14.0)
     pidCharge.sample_time = 30  # Update every 30 second
     pidCharge.output_limits = (0, 15)
 
-    pidDisCharge = PID(-0.01, -0.01, 0, setpoint=0.5)
+    pidDisCharge = PID(-0.02, -0.01, 0, setpoint=0.5)
     p, i, d = pidDisCharge.components
     pidDisCharge.sample_time = 60 # Update every 60 second
     pidDisCharge.output_limits = (0, 74)

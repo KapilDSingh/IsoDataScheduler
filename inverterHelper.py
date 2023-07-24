@@ -208,7 +208,7 @@ class regDataHelper(object):
             loadKW = None
 
             temperatureCelsius= self.readRegValue(modbusClient, 157, 1, 'int16')
-            temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 34
+            temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 32
 
             if (temperatureFahrenheit < 80):
                   self.writeRegValue(modbusClient, 1024, 'int16' , -300)
