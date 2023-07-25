@@ -1,3 +1,4 @@
+from pprint import pprint as pp
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -10,6 +11,10 @@ from sqlalchemy.sql.expression import FunctionFilter
 from sqlalchemy.sql.functions import Function
 from sqlalchemy.orm import Session, sessionmaker
 from scipy.signal import find_peaks, peak_prominences
+
+
+
+
 class GridCPShaving(object):
     """description of class"""
 
@@ -19,22 +24,20 @@ class GridCPShaving(object):
             #register_matplotlib_converters()
             
             if (Area == 'ps'):
-                maxLoadHeight = 3000
-                prominenceHgt = 3
+               minLoadHeight = 6000
+               prominenceHgt = 3
 
             else:
-                maxLoadHeight = 45000
+                minLoadHeight = 120000
                 prominenceHgt = 4
 
             if (isHrly == True):
                 divisor = forecastDf.ForecstNumReads
                 series = forecastDf.HrlyForecstLoad   / divisor
                 # find all the peaks that associated with the positive peaks
-                peaks_positive, _ = find_peaks(series, height = maxLoadHeight, prominence = prominenceHgt, \
+                peaks_positive, _ = find_peaks(series, height = minLoadHeight, prominence = prominenceHgt, \
                                                threshold = None, distance=24)
-                ## find all the peaks that associated with the negative peaks
-                #peaks_negative, _ = scipy.signal.find_peaks(-forecastDf.HrlyForecstLoad \
-                #   / divisor, height = minLoadHeight, threshold = None, distance=10)
+
                 prominences = peak_prominences(series, peaks_positive)[0]
                 contour_heights = series[peaks_positive] - prominences
 
@@ -43,10 +46,6 @@ class GridCPShaving(object):
                 if (len(peaks_positive) > 0):
                     forecastDf.loc[peaks_positive, 'Peak'] = 1
                 
-            
-                #if (len(peaks_negative)>0):
-                #    forecastDf.loc[peaks_negative, 'Peak'] = -1
-
                 #forecastDf.set_index('timestamp', inplace=True) 
                 #plt.figure(figsize = (1200,800))
                 #plt.plot_date(forecastDf.index, series, linewidth = 2)
@@ -60,7 +59,7 @@ class GridCPShaving(object):
                 #forecastDf.reset_index(inplace=True)
             else:
                 # find all the peaks that associated with the positive peaks
-                peaks_positive, _ = scipy.signal.find_peaks(forecastDf.LoadForecast, height = maxLoadHeight,\
+                peaks_positive, _ = scipy.signal.find_peaks(forecastDf.LoadForecast, height = minLoadHeight,\
                    threshold = None, distance=480)
                 contour_heights = None
 
@@ -68,9 +67,6 @@ class GridCPShaving(object):
 
                 if (len(peaks_positive) > 0):
                     forecastDf.loc[peaks_positive, 'Peak'] = 1
-                
-
-   
 
         except Exception as e:
             print("peakSignal",e)
@@ -80,7 +76,7 @@ class GridCPShaving(object):
 
 
 
-    def findPeaks(self, oldestTimestamp, Area, isHrly, isIncremental, isoHelper):
+    def findPeaks(self, oldestTimestamp, Area, isHrly, isoHelper):
 
         if (Area == 'ps') and isHrly == False:
             DataTbl = 'forecastTbl'
@@ -131,26 +127,44 @@ class GridCPShaving(object):
             forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
             forecastDf.reset_index(drop =True, inplace=True)
 
+            #if (isHrly==True) and (Area == 'ps') :
+            #    numRows = forecastDf.shape[0]
+            #    forecastDf.loc[numRows-5, 'Peak']= 1
+            #    forecastDf.loc[numRows-5, 'HrlyForecstLoad']= 100000
+            #    pp(forecastDf)
+
+
             forecastDf, peakProminence = self.peakSignal(forecastDf, Area, isHrly)
 
             ret = isoHelper.replaceDf(DataTbl, forecastDf)
                      
 
             if (isHrly==True) :
+
                 ret = isoHelper.saveDf( DiagnosticsTbl,  forecastDf)
 
                 if (ret == False):
                     print ("1 ret =", ret)
 
-                #forecastDf.loc[0, 'Peak'] = 1
-
+                
                 peakDf = forecastDf[forecastDf['Peak'] > 0]
-                peakDf.reset_index(drop=True,inplace=True)
-
+                peakDf.reset_index(drop=True, inplace=True)
 
                 if  (len(peakDf) == 1):
 
-                    peakOn = False
+                    if (Area == 'PJM RTO'):
+                        minLoad = 135000
+                    else:
+                        minLoad = 8000
+
+                    pp(peakDf)
+                   
+                    HighestPeaksDf = self.CheckCPShaveHour(DataTbl, minLoad,  isoHelper)
+                    if  (np.datetime64(peakDf['timestamp'][0]) in HighestPeaksDf['timestamp'].values):
+                        peakOn = True
+                        peakDf.at[0, 'Peak'] = 2
+                    else:
+                        peakOn = False
 
                     peakStartTime = peakDf['timestamp'][0]  + timedelta(hours =-1)
 
@@ -158,8 +172,8 @@ class GridCPShaving(object):
 
                     currentTime = datetime.now()
                     if  ((peakStartTime <= currentTime) and (currentTime <= peakDf['timestamp'][0])):
-                        peakOn = True
-                        print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
+                        if (peakOn == True):
+                            print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
 
                     elif  (currentTime > peakDf['timestamp'][0]):
                         peakOn = False
@@ -174,45 +188,38 @@ class GridCPShaving(object):
                     if (ret == False):
                         print ("2 ret =", ret)
 
-                    currentTime = datetime.now()
-                    if  ((peakStartTime <= currentTime) and (currentTime <= peakDf['timestamp'][0])):
-                        print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
-
-                    elif  (currentTime > peakDf['timestamp'][0]):
-                        print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
-
-                    if (Area == 'PJM RTO'):
-                        self.CheckCPShaveHour(isoHelper)
-
-
-                
         except BaseException as e:
             print("findPeaks",e)
         finally:
 
             connection.close()
 
-            return forecastDf
+            if (isHrly == True):
+                return  peakOn
+            else:
+                return False
 
-    def CheckCPShaveHour(self, isoHelper):
+    def CheckCPShaveHour(self, forecastTbl, minLoad,  isoHelper):
 
         try:
             connection = isoHelper.engine.connect()
 
 
             sql_query = "SELECT TOP (5) timestamp \
-                FROM   rtoHrlyForecstTbl \
-            WHERE (Peak > 0) AND (timestamp >= '2023-6-1') and \
+                FROM  " + forecastTbl + \
+            " WHERE (Peak > 0) AND (timestamp >= '2023-6-1') and \
             (timestamp < '2023-10-1') and \
-            (HrlyForecstLoad / ForecstNumReads) > 137000 \
-            order by (HrlyForecstLoad / ForecstNumReads) desc"
+            (HrlyForecstLoad / ForecstNumReads) > "  + str(minLoad)  + \
+            " order by (HrlyForecstLoad / ForecstNumReads) desc"
 
             HighestPeaksDf = pd.read_sql_query(sql_query, isoHelper.engine)    
             HighestPeaksDf.reset_index(drop=True,inplace=True)
 
+            HighestPeaksDf['timestamp'] =HighestPeaksDf['timestamp'].apply(lambda x: x.round(freq='T'))
             for timestamp in HighestPeaksDf['timestamp']:
-               sql_query = "Update rtoHrlyForecstTbl \
-                        set Peak = 2 where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S")+"'"
+               sql_query = "Update " +  forecastTbl + \
+                        " set Peak = 2 where timestamp = '" + timestamp.strftime("%Y-%m-%dT%H:%M:%S")+"'"
+
                result = connection.execute(sql_query)
 
             connection.close()
@@ -221,7 +228,7 @@ class GridCPShaving(object):
         except BaseException as e:
             print("CheckCPShaveHour",e)
         finally:
-            return 
+            return HighestPeaksDf
 
     #def checkPeakStart(self,  currentTime, isoHelper):
     #    currentTime = DateTime.Now()

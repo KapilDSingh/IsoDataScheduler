@@ -197,14 +197,14 @@ class DataMiner(object):
 
                    isoHelper.saveLoadDf(Area, True, forecastDf);
                    
-                   GCPShave.findPeaks(oldestTimestamp, Area, False, True, isoHelper)
-                   GCPShave.findPeaks(oldestTimestamp,Area, True, True, isoHelper)
+                   peakOn5min = GCPShave.findPeaks(oldestTimestamp, Area, False, isoHelper)
+                   peakOnHrly = GCPShave.findPeaks(oldestTimestamp,Area, True, isoHelper)
 
 
         except Exception as e:
                print("fetch_LoadForecast",e)
         finally:
-                return
+                return peakOnHrly
 
     def fetch_YrHrlyEvalLoadForecast(self, oldestTimeStamp, Area, isoHelper):
         try:

@@ -28,19 +28,14 @@ def main():
         dataMiner.fetch_InstantaneousLoad(1, 'PJM RTO',isoHelper)
         print("Fetch GenFuel --- 2")
         dataMiner.fetch_GenFuel(11, isoHelper)
-        print("Fetch Meter Data --- 3")
-        #dataMiner.fetch_hourlyMeteredLoad(True, 'CurrentYear', True,isoHelper)
-        #dataMiner.fetch_hourlyMeteredLoad(False, 'CurrentYear', True,isoHelper)
-        #dataMiner.fetch_7dayLoadForecast(True, isoHelper)
         print("Fetch Load Forecast --- 4")
-        dataMiner.fetch_LoadForecast( 'ps', isoHelper,GCPShave)
-        #dataMiner.fetch_7dayLoadForecast(False, isoHelper)
-        dataMiner.fetch_LoadForecast('PJM RTO', isoHelper,GCPShave)
+        psPeakOn = dataMiner.fetch_LoadForecast( 'ps', isoHelper,GCPShave)
+        rtoPeakOn = dataMiner.fetch_LoadForecast('PJM RTO', isoHelper,GCPShave)
         print("Print LMPs --- 5")
         df = isoHelper.getLmp_latest(nodeId='PSEG',numIntervals=6)
 
-      
         print(df)
+        return psPeakOn, rtoPeakOn
    
    
     dataMiner = DataMiner()
@@ -51,57 +46,16 @@ def main():
 
     relayState =0
 
-    #isoHelper.GettRelayState()
-
     isoHelper.emptyAllTbls()
     
     eastern = timezone('US/Eastern')
 
-    oldestTimeStamp =  datetime.now() - timedelta (days =60)
     meterData.fetchMeterData('550001081', 1000, isoHelper)
-    currentDate =datetime.today();
-    #startMeteredPeriod =  datetime(currentDate.year-1, currentDate.month, 1)
-    #endMeteredPeriod =  datetime(currentDate.year, currentDate.month, 1)
-   
-    #dataMiner.fetch_hourlyMeteredLoad(True, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
-    #dataMiner.fetch_hourlyMeteredLoad(False, startMeteredPeriod, endMeteredPeriod, False, isoHelper)
 
     #meterData.genHist('9214411', isoHelper)
     #dataMiner.genPSEGLoadHist(isoHelper)
     #dataMiner.genRTOLoadHist(isoHelper)
    
-    #rng.strftime('%B %d, %Y, %r')
-    #i=1
-    #dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'ps', isoHelper)
-    #dataMiner.fetch_YrHrlyEvalLoadForecast(oldestTimeStamp, 'RTO', isoHelper)
-
-    
-    #dataMiner.fetch_LMP(8640, isoHelper)
-    #dataMiner.fetch_InstantaneousLoad(4320, 'ps',isoHelper)
-    #dataMiner.fetch_InstantaneousLoad(4320, 'PJM RTO',isoHelper)
-
-    #dataMiner.fetch_GenFuel(528, isoHelper)
-    #GCPShave.findPeaks(oldestTimeStamp, 'ps', False, False, isoHelper)
-    #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', False, False, isoHelper)
-    #GCPShave.findPeaks(oldestTimeStamp,  'ps', True, False, isoHelper)
-    #GCPShave.findPeaks(oldestTimeStamp, 'PJM RTO', True, False, isoHelper)
-
-    
-    #dataMiner.fetch_LoadForecast( 'ps', isoHelper, GCPShave)
-    #dataMiner.fetch_LoadForecast('PJM RTO', isoHelper, GCPShave)
-    ##dataMiner.fetch_7dayLoadForecast(True, isoHelper)
-    
-
-
-
-    #oldestMergeTimeStamp =  datetime.now() - timedelta (days =30)
-
-    #isoHelper.mergePSEGTimeSeries(oldestMergeTimeStamp)
-    #isoHelper.mergeRTOTimeSeries(oldestMergeTimeStamp)
-    #isoHelper.mergePSEGHrlySeries(oldestMergeTimeStamp)
-    #isoHelper.mergeRTOHrlySeries(oldestMergeTimeStamp)
-
-
     modbusClient =  inverterHelper.connectInverter()
 
     valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
@@ -114,22 +68,22 @@ def main():
 
     pidDisCharge = PID(-0.02, -0.01, 0, setpoint=0.5)
     p, i, d = pidDisCharge.components
-    pidDisCharge.sample_time = 60 # Update every 60 second
+    pidDisCharge.sample_time = 30 # Update every 30 second
     pidDisCharge.output_limits = (0, 74)
     print ("Initial p= ", p, " i = ", i, " d = ",d)
 
+    #inverterHelper.updateDBRegValues(modbusClient)
+
     while True:
 
-        putIsoData(dataMiner,isoHelper)
- 
-
+        psPeakOn, rtoPeakOn = putIsoData(dataMiner,isoHelper)
 
         if (modbusClient != None):
 
-
-            #inverterHelper.updateDBRegValues(modbusClient)
-             batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
-             #loadKW, newAmps= inverterHelper.peakShave(modbusClient, meterData, isoHelper, pidDisCharge)
+            if (psPeakOn == False and rtoPeakOn == False):
+                batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
+            else:
+                loadKW, newAmps= inverterHelper.peakShave(modbusClient, meterData, isoHelper, pidDisCharge)
 
 
             #Results = isoHelper.call_procedure("[ISPeakShavingON]", [])

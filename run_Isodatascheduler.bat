@@ -1,1 +1,1 @@
-c:\isodatascheduler\env2\scripts\python.exe c:\isodatascheduler\isodatascheduler.py
+c:\ControllerApp\env10\scripts\python.exe c:\ControllerApp\isodatascheduler.py
