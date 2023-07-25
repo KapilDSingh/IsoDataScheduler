@@ -101,9 +101,6 @@ class regDataHelper(object):
 
         try:
 
-            valType = None
-            regValue = None
-
             builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
     
             if (valType == 'string'):
