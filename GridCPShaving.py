@@ -90,6 +90,7 @@ class GridCPShaving(object):
             DataTbl = 'rtoHrlyForecstTbl'
 
         forecastDf = None
+        peakOn = False
 
         try:
             connection = isoHelper.engine.connect()

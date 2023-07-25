@@ -50,6 +50,7 @@ class regDataHelper(object):
     def readRegValue(self, modbusClient, regAddress, size, valType, bitIdx = None):
 
         try:
+            regValue = None
     
             result = modbusClient.read_holding_registers  (regAddress, size, unit=1)
             decoder = BinaryPayloadDecoder.fromRegisters(result.registers, byteorder=Endian.Big, wordorder=Endian.Big)
@@ -99,6 +100,9 @@ class regDataHelper(object):
     def writeRegValue(self, modbusClient, regAddress, valType, regValue):
 
         try:
+
+            valType = None
+            regValue = None
 
             builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
     

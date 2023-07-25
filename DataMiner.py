@@ -132,6 +132,10 @@ class DataMiner(object):
 
 
     def fetch_LoadForecast(self, Area, isoHelper,GCPShave):
+
+        peakOnHrly = False
+        peakOn5min = False
+
         try:
                if (Area == 'ps'):
                     AreaCode = 'PSE&G/MIDATL'
@@ -193,6 +197,7 @@ class DataMiner(object):
                
                forecastDf.reset_index(drop=True,inplace=True)
                
+
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
 
                    isoHelper.saveLoadDf(Area, True, forecastDf);
