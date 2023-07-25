@@ -167,6 +167,10 @@ class GridCPShaving(object):
                     else:
                         peakOn = False
 
+#######################################################################################
+                    peakOn = True
+##########################################################################################
+
                     peakStartTime = peakDf['timestamp'][0]  + timedelta(hours =-1)
 
                     load = peakDf['HrlyForecstLoad'][0] /  peakDf['ForecstNumReads']
