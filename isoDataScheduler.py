@@ -28,7 +28,10 @@ def main():
         dataMiner.fetch_InstantaneousLoad(1, 'PJM RTO',isoHelper)
         print("Fetch GenFuel --- 2")
         dataMiner.fetch_GenFuel(11, isoHelper)
+
+
         print("Fetch Load Forecast --- 4")
+
         psPeakOn = dataMiner.fetch_LoadForecast( 'ps', isoHelper,GCPShave)
         rtoPeakOn = dataMiner.fetch_LoadForecast('PJM RTO', isoHelper,GCPShave)
         print("Print LMPs --- 5")
@@ -77,13 +80,15 @@ def main():
     while True:
 
         psPeakOn, rtoPeakOn = putIsoData(dataMiner,isoHelper)
+        print (' Fetch Meter Data')
+        timestamp, loadKW, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
 
         if (modbusClient != None):
 
             if (psPeakOn == False and rtoPeakOn == False):
                 batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
             else:
-                loadKW, newAmps= inverterHelper.peakShave(modbusClient, meterData, isoHelper, pidDisCharge)
+                loadKW, newAmps= inverterHelper.peakShave(modbusClient, timestamp, loadKW, State_Watts_Dir , isoHelper, pidDisCharge)
 
 
             #Results = isoHelper.call_procedure("[ISPeakShavingON]", [])

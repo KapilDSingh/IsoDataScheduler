@@ -200,7 +200,7 @@ class regDataHelper(object):
     #        return  batteryVoltage, Current, currentKW,  disChargingKW
 
 
-    def peakShave(self, modbusClient,  meterData, isoHelper, pid):
+    def peakShave(self, modbusClient,   timestamp, loadKW, State_Watts_Dir, isoHelper, pid):
         try:
             batteryVoltage = None
             CurrentAmps = None
@@ -224,7 +224,6 @@ class regDataHelper(object):
 
             CurrentAmps = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
 
-            timestamp, loadKW, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
 
            # if ((State_Watts_Dir == 8) or (State_Watts_Dir == 1)):
 
