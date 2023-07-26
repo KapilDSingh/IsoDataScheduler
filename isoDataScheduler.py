@@ -69,7 +69,7 @@ def main():
     pidCharge.sample_time = 30  # Update every 30 second
     pidCharge.output_limits = (0, 15)
 
-    pidDisCharge = PID(-0.02, -0.01, 0, setpoint=0.5)
+    pidDisCharge = PID(-1,  -0.02, 0.05, setpoint=0.0)
     p, i, d = pidDisCharge.components
     pidDisCharge.sample_time = 30 # Update every 30 second
     pidDisCharge.output_limits = (0, 74)
@@ -84,7 +84,8 @@ def main():
         timestamp, loadKW, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
 
         if (modbusClient != None):
-
+            psPeakOn = True
+            rtoPeakOn = False
             if (psPeakOn == False and rtoPeakOn == False):
                 batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
             else:
