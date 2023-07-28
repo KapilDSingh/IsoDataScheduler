@@ -65,7 +65,7 @@ def main():
     valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16',0)
 
 
-    pidCharge = PID(1, 0.1, 0.05, setpoint=14.0)
+    pidCharge = PID(1, 0.1, 0.05, setpoint=14.3)
     pidCharge.sample_time = 30  # Update every 30 second
     pidCharge.output_limits = (0, 15)
 
@@ -80,6 +80,7 @@ def main():
     while True:
 
         psPeakOn, rtoPeakOn = putIsoData(dataMiner,isoHelper)
+
         print (' Fetch Meter Data')
         timestamp, loadKW, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
 

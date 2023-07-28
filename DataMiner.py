@@ -33,6 +33,10 @@ class DataMiner(object):
     http = urllib3.PoolManager()
 
     headers = {'Ocp-Apim-Subscription-Key': '66e17241413e4462b597005b135e0c79'}
+
+    peakOnHrly = False
+    peakOn5min = False
+
     
     def fetch_LMP(self, numRows, isoHelper):
         try:
@@ -133,8 +137,6 @@ class DataMiner(object):
 
     def fetch_LoadForecast(self, Area, isoHelper,GCPShave):
 
-        peakOnHrly = False
-        peakOn5min = False
 
         try:
                if (Area == 'ps'):
@@ -202,14 +204,14 @@ class DataMiner(object):
 
                    isoHelper.saveLoadDf(Area, True, forecastDf);
                    
-                   peakOn5min = GCPShave.findPeaks(oldestTimestamp, Area, False, isoHelper)
-                   peakOnHrly = GCPShave.findPeaks(oldestTimestamp,Area, True, isoHelper)
+                   DataMiner.peakOn5min = GCPShave.findPeaks(oldestTimestamp, Area, False, isoHelper)
+                   DataMiner.peakOnHrly = GCPShave.findPeaks(oldestTimestamp,Area, True, isoHelper)
 
 
         except Exception as e:
                print("fetch_LoadForecast",e)
         finally:
-                return peakOnHrly
+                return DataMiner.peakOnHrly
 
     def fetch_YrHrlyEvalLoadForecast(self, oldestTimeStamp, Area, isoHelper):
         try:
