@@ -267,7 +267,7 @@ class regDataHelper(object):
             if (temperatureFahrenheit < 82):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 100)
             elif (temperatureFahrenheit < 85):
-                  self.writeRegValue(modbusClient, 1024, 'int16' , 10)
+                  self.writeRegValue(modbusClient, 1024, 'int16' , 50)
             elif (temperatureFahrenheit >= 85):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 5)
 
@@ -280,7 +280,14 @@ class regDataHelper(object):
             newChgCurrent = pid (batteryVoltage)
             newChgCurrent = abs(newChgCurrent)
             
-            self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
+            currentTime = datetime.now()
+            endNonChargeTime = currentTime.replace(hour = 20, minute=0, second = 0, microsecond =0)
+            startNonChargeTime = currentTime.replace(hour = 16, minute=0, second = 0, microsecond =0)
+
+            if (currentTime <=startNonChargeTime ) or (currentTime >= endNonChargeTime):
+                self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
+            else:
+                print ("Non Charge Time Window")
 
             #print ("CHARGING batteryVoltage = ", batteryVoltage," newChgCurrent = ", newChgCurrent)
         except BaseException as e:
