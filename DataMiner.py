@@ -25,10 +25,8 @@ from IsodataHelpers import IsodataHelpers
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 class DataMiner(object):
     """description of class"""
-
 
     http = urllib3.PoolManager()
 
@@ -50,7 +48,6 @@ class DataMiner(object):
 
             lmpDf.reset_index(drop=True, inplace= True)
             
-           
             lmpDf.rename(columns={"datetime_beginning_ept": "timestamp", "five_min_rtlmp": "5 Minute Weighted Avg. LMP", "hourly_lmp": "Hourly Integrated LMP", "type": "Type", "name": "node_id"},inplace =True)
             
             lmpDf['timestamp'] = pd.to_datetime(lmpDf['timestamp'].values).strftime('%Y-%m-%d %H:%M:%S')
@@ -69,8 +66,6 @@ class DataMiner(object):
         finally:
             return
 
-
-
     def fetch_InstantaneousLoad(self, numRows,  Area, isoHelper):
 
         try:
@@ -83,12 +78,10 @@ class DataMiner(object):
             
             jsonData = json.loads(r.data)
 
-
             jsonExtractData = jsonData['items']
             loadDf = pd.DataFrame(jsonExtractData)
 
             loadDf.reset_index(drop=True, inplace= True)
-            
            
             loadDf.rename(columns={"datetime_beginning_ept": "timestamp", "area": "Area", "instantaneous_load": "Load"},inplace =True)
             
@@ -98,20 +91,15 @@ class DataMiner(object):
 
             ret = isoHelper.saveLoadDf(Area, False, loadDf)
 
- 
         except Exception as e:
   
             print("Fetch Instantaneous Load Unexpected error:", e)
         finally:
             return ret
 
-
-
     def fetch_GenFuel(self, numRows, isoHelper):
 
-        try:
-
-   
+        try:   
             r = self.http.request('GET', 'https://api.pjm.com/api/v1/gen_by_fuel?rowCount=' + str(numRows) + '&sort=datetime_beginning_ept&order=desc&startrow=1&fields=datetime_beginning_ept,fuel_type,mw,fuel_percentage_of_total,is_renewable&format=JSON', headers=self.headers)
             jsonData = json.loads(r.data)
 
@@ -137,7 +125,6 @@ class DataMiner(object):
 
     def fetch_LoadForecast(self, Area, isoHelper,GCPShave):
 
-
         try:
                if (Area == 'ps'):
                     AreaCode = 'PSE&G/MIDATL'
@@ -151,12 +138,8 @@ class DataMiner(object):
                 'sort': 'forecast_datetime_beginning_ept',
                 'order': 'asc',
                 'startRow': '1',
-               
-    
                 'fields': 'evaluated_at_ept,forecast_datetime_beginning_ept,forecast_area, forecast_load_mw',
-   
                 'evaluated_at_ept': '5minutesago',
-                
                 'forecast_area': AreaCode,
                 'format':'json'})
                r = self.http.request('GET', "https://api.pjm.com/api/v1/very_short_load_frcst?" + params, headers=self.headers)
@@ -167,7 +150,6 @@ class DataMiner(object):
                forecastDf = pd.DataFrame(jsonExtractData)
 
                forecastDf.reset_index(drop=True, inplace= True)
-            
            
                forecastDf.rename(columns={"forecast_datetime_beginning_ept": "timestamp", \
                    "evaluated_at_ept": "EvaluatedAt", "forecast_area":"Area","forecast_load_mw": "LoadForecast"},inplace =True)
@@ -194,11 +176,9 @@ class DataMiner(object):
  
                forecastDf = forecastDf.sort_values('timestamp')
 
-
                dfTimeStamp = isoHelper.get_latest_Forecast(Area,isShortTerm=True)
                
                forecastDf.reset_index(drop=True,inplace=True)
-               
 
                if (( dfTimeStamp.empty) or newestTimestamp > dfTimeStamp.iloc[0,0]) :
 
@@ -206,7 +186,6 @@ class DataMiner(object):
                    
                    DataMiner.peakOn5min = GCPShave.findPeaks(oldestTimestamp, Area, False, isoHelper)
                    DataMiner.peakOnHrly = GCPShave.findPeaks(oldestTimestamp,Area, True, isoHelper)
-
 
         except Exception as e:
                print("fetch_LoadForecast",e)

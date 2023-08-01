@@ -69,7 +69,7 @@ def main():
     pidCharge.sample_time = 30  # Update every 30 second
     pidCharge.output_limits = (0, 12)
 
-    pidDisCharge = PID(-.7,  -0.02, 0.05, setpoint=0.0)
+    pidDisCharge = PID(-.7,  -0.015, 0.05, setpoint=0.0)
     p, i, d = pidDisCharge.components
     pidDisCharge.sample_time = 30 # Update every 30 second
     pidDisCharge.output_limits = (0, 74)

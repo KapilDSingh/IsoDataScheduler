@@ -144,8 +144,6 @@ class IsodataHelpers(object):
 
             ret = self.saveDf(DataTbl=HrlyTbl, Data= hrlyDataDf)
 
-            
-
             if (ret == False):
                 print("save_hrly_load could not save hrlyDataDf")
 
@@ -198,7 +196,6 @@ class IsodataHelpers(object):
 
             loadDf['timestamp'] =loadDf['timestamp'].apply(lambda x: x.round(freq='T'))
 
-        
             if (len(loadDf.index) > 1):
                 oldestTimestamp =loadDf['timestamp'].min()
                 self.clearTbl(oldestTimestamp, DataTbl)
@@ -211,7 +208,6 @@ class IsodataHelpers(object):
                             ActualsTbl = 'psInstLoadTbl'
                         else:
                             ActualsTbl = 'loadTbl'
-
 
                         loadQuery = "select Load from " + str(ActualsTbl) +  "  where timestamp = '" + oldestTimestamp.strftime("%Y-%m-%dT%H:%M:%S")  +"'"
 

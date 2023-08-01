@@ -12,9 +12,6 @@ from sqlalchemy.sql.functions import Function
 from sqlalchemy.orm import Session, sessionmaker
 from scipy.signal import find_peaks, peak_prominences
 
-
-
-
 class GridCPShaving(object):
     """description of class"""
 
@@ -128,13 +125,6 @@ class GridCPShaving(object):
             forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
             forecastDf.reset_index(drop =True, inplace=True)
 
-            #if (isHrly==True) and (Area == 'ps') :
-            #    numRows = forecastDf.shape[0]
-            #    forecastDf.loc[numRows-5, 'Peak']= 1
-            #    forecastDf.loc[numRows-5, 'HrlyForecstLoad']= 100000
-            #    pp(forecastDf)
-
-
             forecastDf, peakProminence = self.peakSignal(forecastDf, Area, isHrly)
 
             ret = isoHelper.replaceDf(DataTbl, forecastDf)
@@ -142,12 +132,6 @@ class GridCPShaving(object):
 
             if (isHrly==True) :
 
-                ret = isoHelper.saveDf( DiagnosticsTbl,  forecastDf)
-
-                if (ret == False):
-                    print ("1 ret =", ret)
-
-                
                 peakDf = forecastDf[forecastDf['Peak'] > 0]
                 peakDf.reset_index(drop=True, inplace=True)
 
@@ -158,29 +142,30 @@ class GridCPShaving(object):
                     else:
                         minLoad = 8000
 
-                   
                     HighestPeaksDf = self.CheckCPShaveHour(DataTbl, minLoad,  isoHelper)
                     if  (np.datetime64(peakDf['timestamp'][0]) in HighestPeaksDf['timestamp'].values):
                         peakOn = True
                         peakDf.at[0, 'Peak'] = 2
                     else:
-                        peakOn = False
-
+                        peakOn = True
 
                     peakStartTime = peakDf['timestamp'][0]  + timedelta(hours =-1)
 
                     load = peakDf['HrlyForecstLoad'][0] /  peakDf['ForecstNumReads']
 
                     currentTime = datetime.now()
-                    if  ((peakStartTime <= currentTime) and (currentTime <= peakDf['timestamp'][0])):
-                        if (peakOn == True):
-                            print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
-
-                    else:
-                        peakOn = False
-                        print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
-
-
+                    if (peakOn == True):
+                        if  ((peakStartTime <= currentTime) and (currentTime <= peakDf['timestamp'][0])):
+                                print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
+                        else:
+                            Results = isoHelper.call_procedure("[ChkOverTime] ?", peakDf['timestamp'][0])
+                            if (len(Results) ==1):
+                                params= [peakDf['timestamp'][0], Area]
+                                Results = isoHelper.call_procedure("[IsLoadDecreasing] ?, ?",params)
+                                if (len(Results) == 1):
+                                    peakOn = False
+                                    print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
+ 
                     data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], peakDf['EvaluatedAt'][0], peakStartTime, peakDf['ForecstNumReads'][0], peakDf['HrlyForecstLoad'][0], load.loc[0], peakOn]]
 
                     peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad', 'PeakOn'])
@@ -196,7 +181,7 @@ class GridCPShaving(object):
             connection.close()
 
             if (isHrly == True):
-                return  peakOn
+                return  False
             else:
                 return False
 
