@@ -128,18 +128,10 @@ class GridCPShaving(object):
             forecastDf = pd.read_sql_query(sql_query, isoHelper.engine) 
             forecastDf.reset_index(drop =True, inplace=True)
 
-            #if (isHrly==True) and (Area == 'ps') :
-            #    numRows = forecastDf.shape[0]
-            #    forecastDf.loc[numRows-5, 'Peak']= 1
-            #    forecastDf.loc[numRows-5, 'HrlyForecstLoad']= 100000
-            #    pp(forecastDf)
-
-
             forecastDf, peakProminence = self.peakSignal(forecastDf, Area, isHrly)
 
             ret = isoHelper.replaceDf(DataTbl, forecastDf)
                      
-
             if (isHrly==True) :
 
                 ret = isoHelper.saveDf( DiagnosticsTbl,  forecastDf)
@@ -165,7 +157,6 @@ class GridCPShaving(object):
                         peakDf.at[0, 'Peak'] = 2
                     else:
                         peakOn = False
-
 
                     peakStartTime = peakDf['timestamp'][0]  + timedelta(hours =-1)
 
