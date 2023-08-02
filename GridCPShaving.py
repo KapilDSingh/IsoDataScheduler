@@ -25,7 +25,7 @@ class GridCPShaving(object):
                prominenceHgt = 1
 
             else:
-                minLoadHeight = 120000
+                minLoadHeight = 100000
                 prominenceHgt = 3
 
             if (isHrly == True):
@@ -151,22 +151,32 @@ class GridCPShaving(object):
 
                     peakStartTime = peakDf['timestamp'][0]  + timedelta(hours =-1)
 
-                    load = peakDf['HrlyForecstLoad'][0] /  peakDf['ForecstNumReads']
-
                     currentTime = datetime.now()
                     if (peakOn == True):
                         if  ((peakStartTime <= currentTime) and (currentTime <= peakDf['timestamp'][0])):
                                 print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
+
+                                EvalAt = peakDf['EvaluatedAt'][0]
+                                NumReads = peakDf['ForecstNumReads'][0]
+                                HrlyForecstLoad =  peakDf['HrlyForecstLoad'][0]
+                                load = peakDf['HrlyForecstLoad'][0] /  peakDf['ForecstNumReads']
+                                load = load.loc[0]
                         else:
                             Results = isoHelper.call_procedure("[ChkOverTime] ?", peakDf['timestamp'][0])
                             if (len(Results) ==1):
                                 params= [peakDf['timestamp'][0], Area]
                                 Results = isoHelper.call_procedure("[IsLoadDecreasing] ?, ?",params)
                                 if (len(Results) == 1):
+
+                                    EvalAt = Results[0][1]
+                                    NumReads =  Results[0][2]
+                                    HrlyForecstLoad =  Results[0][3]
+                                    load = Results[0][4]
+
                                     peakOn = False
                                     print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
  
-                    data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], peakDf['EvaluatedAt'][0], peakStartTime, peakDf['ForecstNumReads'][0], peakDf['HrlyForecstLoad'][0], load.loc[0], peakOn]]
+                    data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], EvalAt, peakStartTime, NumReads, HrlyForecstLoad, load, peakOn]]
 
                     peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad', 'PeakOn'])
 
