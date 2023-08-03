@@ -151,6 +151,7 @@ class GridCPShaving(object):
                     currentTimeStamp = pd.Timestamp(timeNow.strftime("%Y-%m-%dT%H:%M:%S"))
                     currentTimeStamp5min = currentTimeStamp.round('5min')
 
+                    peakOn = False
                     if (currentTimeStamp5min >= peakStartTime):
 
                         HighestPeaksDf = self.CheckCPShaveHour(DataTbl, minLoad,  isoHelper)
