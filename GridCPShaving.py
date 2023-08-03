@@ -159,7 +159,7 @@ class GridCPShaving(object):
                             peakOn = True
                             peakDf.at[0, 'Peak'] = 2
                         else:
-                            peakOn = True
+                            peakOn = False
                   
                         if (peakOn == True):
                             if  ((peakStartTime <= currentTimeStamp5min) and (currentTimeStamp5min <= peakDf['timestamp'][0])):
