@@ -198,13 +198,13 @@ class GridCPShaving(object):
                                     currentHrlyLoad = 0
                                     prevHrlyLoad = 0
 
-                        data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], EvalAt, peakStartTime, NumReads, HrlyForecstLoad, currentHrlyLoad, peakOn]]
+                            data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], EvalAt, peakStartTime, NumReads, HrlyForecstLoad, currentHrlyLoad, peakOn]]
 
-                        peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad', 'PeakOn'])
+                            peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad', 'PeakOn'])
 
-                        ret= isoHelper.saveDf(DataTbl='peakSignalTbl', Data= peakSignalDf)
-                        if (ret == False):
-                            print ("2 ret =", ret)
+                            ret= isoHelper.saveDf(DataTbl='peakSignalTbl', Data= peakSignalDf)
+                            if (ret == False):
+                                print ("2 ret =", ret)
 
         except BaseException as e:
             print("findPeaks",e)
