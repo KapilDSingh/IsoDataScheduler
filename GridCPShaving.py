@@ -161,7 +161,7 @@ class GridCPShaving(object):
                                 HrlyForecstLoad =  peakDf['HrlyForecstLoad'][0]
                                 load = peakDf['HrlyForecstLoad'][0] /  peakDf['ForecstNumReads']
                                 load = load.loc[0]
-                        else:
+                        elif (currentTime > peakDf['timestamp'][0]):
                             Results = isoHelper.call_procedure("[ChkOverTime] ?", peakDf['timestamp'][0])
                             if (len(Results) ==1):
                                 params= [peakDf['timestamp'][0], Area]
@@ -176,6 +176,7 @@ class GridCPShaving(object):
                                     peakOn = False
                                     print ('Time = ', currentTime.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
  
+
                     data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], EvalAt, peakStartTime, NumReads, HrlyForecstLoad, load, peakOn]]
 
                     peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad', 'PeakOn'])

@@ -187,6 +187,13 @@ class DataMiner(object):
                    DataMiner.peakOn5min = GCPShave.findPeaks(oldestTimestamp, Area, False, isoHelper)
                    DataMiner.peakOnHrly = GCPShave.findPeaks(oldestTimestamp,Area, True, isoHelper)
 
+                   startDayTime = newestEvaluatedAt.replace(hour = 0, minute=0, second = 0, microsecond =0)
+                   params= [Area, False,  newestEvaluatedAt, startDayTime]
+                   Results = isoHelper.call_procedure("[InsertRefreshDataTbl] ?, ?, ?, ?",params)
+                   params= [Area, True, newestEvaluatedAt, startDayTime]
+                   Results = isoHelper.call_procedure("[InsertRefreshDataTbl] ?, ?, ?, ?",params)
+
+
         except Exception as e:
                print("fetch_LoadForecast",e)
         finally:
