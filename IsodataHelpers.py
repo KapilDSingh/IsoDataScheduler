@@ -229,6 +229,23 @@ class IsodataHelpers(object):
         finally:
             return ret
     
+    def getMaxEvalAt (self, Area):
+
+        if (Area == 'ps'):
+            HrlyForecstTbl = 'psHrlyForecstTbl'
+        else:
+            HrlyForecstTbl = 'rtoHrlyForecstTbl'
+
+        EvalAtQuery = "select max(EvaluatedAt) from " + HrlyForecstTbl 
+
+        connection = self.engine.connect()
+
+        maxEvalAt = connection.execute(EvalAtQuery).scalar()
+
+        connection.close()
+
+        return maxEvalAt
+
     def CheckPeakEnd(self, timestamp, Area):
 
         try:
