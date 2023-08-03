@@ -212,7 +212,7 @@ class GridCPShaving(object):
             connection.close()
 
             if (isHrly == True):
-                return  False
+                return  peakOn
             else:
                 return False
 
