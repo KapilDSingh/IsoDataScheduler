@@ -160,9 +160,9 @@ class GridCPShaving(object):
                         HighestPeaksDf = self.CheckCPShaveHour(DataTbl, minLoad,  isoHelper)
                         if  (np.datetime64(peakDf['timestamp'][0]) in HighestPeaksDf['timestamp'].values):
                             peakDf.at[0, 'Peak'] = 2
-                            PeakOn = True
+                            peakOn = True
                         else:
-                            PeakOn = False
+                            peakOn = False
 
                         if  ((peakStartTime <= currentTimeStamp5min) and (currentTimeStamp5min <= peakDf['timestamp'][0])):
                             print ('Time = ', currentTimeStamp5min.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
@@ -212,7 +212,7 @@ class GridCPShaving(object):
             print("findPeaks",e)
         finally:
             connection.close()
-            return  PeakOn
+            return  peakOn
 
     def CheckCPShaveHour(self, forecastTbl, minLoad,  isoHelper):
 
