@@ -88,6 +88,7 @@ class GridCPShaving(object):
 
         forecastDf = None
         dailyPeakOn = False
+        peakOn = False
 
         try:
             connection = isoHelper.engine.connect()
@@ -150,8 +151,6 @@ class GridCPShaving(object):
                     timeNow =  datetime.now()
                     currentTimeStamp = pd.Timestamp(timeNow.strftime("%Y-%m-%dT%H:%M:%S"))
                     currentTimeStamp5min = currentTimeStamp.round('5min')
-
-                    dailyPeakOn = False
 
                     if (currentTimeStamp5min >= peakStartTime):
 
