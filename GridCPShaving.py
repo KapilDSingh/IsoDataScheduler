@@ -198,7 +198,7 @@ class GridCPShaving(object):
                             currentHrlyLoad = 0
                             prevHrlyLoad = 0
 
-                    data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], EvalAt, peakStartTime, NumReads, HrlyForecstLoad, currentHrlyLoad, peakOn and dailyPeakOn]]
+                    data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], EvalAt, peakStartTime, NumReads, HrlyForecstLoad, currentHrlyLoad, dailyPeakOn]]
 
                     peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad', 'DailyPeakON'])
 
