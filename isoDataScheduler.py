@@ -26,14 +26,15 @@ def main():
         dataMiner.fetch_LMP(1, isoHelper)
         dataMiner.fetch_InstantaneousLoad(1, 'ps',isoHelper)
         dataMiner.fetch_InstantaneousLoad(1, 'PJM RTO',isoHelper)
+
         print("Fetch GenFuel --- 2")
         dataMiner.fetch_GenFuel(11, isoHelper)
-
 
         print("Fetch Load Forecast --- 4")
 
         psPeakOn = dataMiner.fetch_LoadForecast( 'ps', isoHelper,GCPShave)
         rtoPeakOn = dataMiner.fetch_LoadForecast('PJM RTO', isoHelper,GCPShave)
+
         print("Print LMPs --- 5")
         df = isoHelper.getLmp_latest(nodeId='PSEG',numIntervals=6)
 
@@ -63,7 +64,6 @@ def main():
 
     valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
     valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16',0)
-
 
     pidCharge = PID(1, 0.1, 0.05, setpoint=13.5)
     pidCharge.sample_time = 30  # Update every 30 second

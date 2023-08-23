@@ -302,30 +302,83 @@ class GridCPShaving(object):
             connection.close()
             return 
 
-    def checkDemandMgmtStart(self,  isoHelper):
+    #def checkDemandMgmtStart(self,  isoHelper):
    
 
-        try:
-            sql_query = "Update [ISODB].[dbo]." + forecastTbl + " set Peak=3 where timestamp in "\
-                            "(SELECT   [ISODB].[dbo]." + forecastTbl + ".timestamp \
-                        FROM  [ISODB].[dbo]." + forecastTbl + " INNER JOIN \
-                         [ISODB].[dbo]." + DataTbl + " ON [ISODB].[dbo]." + forecastTbl + \
-                         ".timestamp = DATEADD (hour , -1 ,  [ISODB].[dbo]." + DataTbl + ".timestamp )  \
-                         WHERE       ( ([ISODB].[dbo]." + forecastTbl + ".Peak > 0) and \
-                         ([ISODB].[dbo]." + forecastTbl + ".HrlyForecstLoad/ [ISODB].[dbo]." + forecastTbl + ".ForecstNumReads \
-                         < [ISODB].[dbo]." + DataTbl + ".HrlyInstLoad / [ISODB].[dbo]." + DataTbl + ".NumReads)))"
+    #    try:
+    #        sql_query = "Update [ISODB].[dbo]." + forecastTbl + " set Peak=3 where timestamp in "\
+    #                        "(SELECT   [ISODB].[dbo]." + forecastTbl + ".timestamp \
+    #                    FROM  [ISODB].[dbo]." + forecastTbl + " INNER JOIN \
+    #                     [ISODB].[dbo]." + DataTbl + " ON [ISODB].[dbo]." + forecastTbl + \
+    #                     ".timestamp = DATEADD (hour , -1 ,  [ISODB].[dbo]." + DataTbl + ".timestamp )  \
+    #                     WHERE       ( ([ISODB].[dbo]." + forecastTbl + ".Peak > 0) and \
+    #                     ([ISODB].[dbo]." + forecastTbl + ".HrlyForecstLoad/ [ISODB].[dbo]." + forecastTbl + ".ForecstNumReads \
+    #                     < [ISODB].[dbo]." + DataTbl + ".HrlyInstLoad / [ISODB].[dbo]." + DataTbl + ".NumReads)))"
 
-            connection = isoHelper.engine.connect()
+    #        connection = isoHelper.engine.connect()
 
-            result = connection.execute(sql_query)
+    #        result = connection.execute(sql_query)
 
             
-            numIncorrectPeaks = connection.execute("SELECT COUNT(*) FROM " + forecastTbl + " where Peak=3").scalar()
+    #        numIncorrectPeaks = connection.execute("SELECT COUNT(*) FROM " + forecastTbl + " where Peak=3").scalar()
 
+
+    #    except BaseException as e:
+    #        print("checkPeaks",e)
+    #    finally:
+    #        connection.close()
+    #        return 
+
+    def getShaveSignal(self, startTimestamp,  isoHelper):
+
+        try:                
+            StartTimeStr = startTimestamp.strftime("%Y-%m-%dT%H:%M:%S")
+            
+            shaveSignalQuery = "SELECT  [timestamp], [Area], [Peak], [EvaluatedAt],  [startPeakTime], [HrlyLoad], [DailyPeakON] \
+                    FROM [ISODB].[dbo].[peakSignalTbl]  where DailyPeakON > 0 and EvaluatedAt >=  CONVERT(DATETIME,'" + StartTimeStr + "' order by EvaluatedAt  )"
+
+            shaveDf = pd.read_sql(shaveSignalQuery,isoHelper.engine)
+              
 
         except BaseException as e:
-            print("checkPeaks",e)
+            print("getShaveSignal ",e)
+  
         finally:
-            connection.close()
-            return 
+            return shaveDf
+
+    def leanShaveSignal(self, shaveDf):
+
+        try:                
+         
+            # Python3 code to demonstrate working of
+            # Grouped Consecutive Range Indices of Elements
+            # Using groupby() + defaultdict() + len() + loop
+            from itertools import groupby
+            from collections import defaultdict
+
+            # initializing lists
+            test_list = shaveDf[['DailyPeakON']]
+
+            # printing string
+            print("The original list : " + str(test_list))
+
+            idx = 0
+            res = defaultdict(list)
+
+            # grouping Consecutives
+            for key, sub in groupby(test_list):
+                ele = len(list(sub))
+     
+                # append strt index, and till index
+                res[key].append((idx, idx + ele - 1))
+                idx += ele
+
+            # printing results
+            print("The grouped dictionary : " + str(dict(res)))
+
+        except BaseException as e:
+            print("leanShaveSignal ",e)
+  
+        finally:
+            return shaveDf
 
