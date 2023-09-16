@@ -85,9 +85,9 @@ def main():
         timestamp, loadKW, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
 
         if (modbusClient != None):
-            #if (psPeakOn == False and rtoPeakOn == False):
-            #    batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
-            #else:
+            if (psPeakOn == False and rtoPeakOn == False):
+                batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
+            else:
                 loadKW, newAmps= inverterHelper.peakShave(modbusClient, timestamp, loadKW, State_Watts_Dir , isoHelper, pidDisCharge)
 
 
