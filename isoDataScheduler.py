@@ -65,7 +65,7 @@ def main():
     valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
     valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16',0)
 
-    pidCharge = PID(1, 0.1, 0.05, setpoint=14.1)
+    pidCharge = PID(1, 0.1, 0.05, setpoint=13.4)
     pidCharge.sample_time = 30  # Update every 30 second
     pidCharge.output_limits = (0, 12)
 
@@ -85,9 +85,9 @@ def main():
         timestamp, loadKW, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
 
         if (modbusClient != None):
-            if (psPeakOn == False and rtoPeakOn == False):
-                batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
-            else:
+            #if (psPeakOn == False and rtoPeakOn == False):
+            #    batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
+            #else:
                 loadKW, newAmps= inverterHelper.peakShave(modbusClient, timestamp, loadKW, State_Watts_Dir , isoHelper, pidDisCharge)
 
 

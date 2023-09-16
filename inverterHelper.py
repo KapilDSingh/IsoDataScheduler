@@ -281,8 +281,8 @@ class regDataHelper(object):
             newChgCurrent = abs(newChgCurrent)
             
             currentTime = datetime.now()
-            endNonChargeTime = currentTime.replace(hour = 19, minute=20, second = 0, microsecond =0)
-            startNonChargeTime = currentTime.replace(hour = 14, minute=0, second = 0, microsecond =0)
+            endNonChargeTime = currentTime.replace(hour = 23, minute=30, second = 0, microsecond =0)
+            startNonChargeTime = currentTime.replace(hour = 10, minute=0, second = 0, microsecond =0)
 
             if (currentTime <=startNonChargeTime ) or (currentTime >= endNonChargeTime):
                 self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
