@@ -277,7 +277,7 @@ class regDataHelper(object):
             endChargeTime = currentTime.replace(hour = 10, minute=0, second = 0, microsecond =0)
             startChargeTime = currentTime.replace(hour =6, minute=0, second = 0, microsecond =0)
 
-            if (currentTime >=startChargeTime ) or (currentTime <= endChargeTime):
+            if (currentTime >=startChargeTime ) and (currentTime <= endChargeTime):
 
                 self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
                 print (" p= ", pid.PTerm, " i = ", pid.ITerm, " d = ",pid.DTerm)
@@ -286,6 +286,8 @@ class regDataHelper(object):
             else:
                 print ("Non Charge Time Window")
                 self.writeRegValue(modbusClient, 1626, 'uint16' ,round (0))
+                valType, regValue =  self.writeRegValue(modbusClient, 1024, 'int16',0)
+
            
         except BaseException as e:
                 print("chargeBatteries ",e)
