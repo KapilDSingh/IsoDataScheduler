@@ -21,7 +21,7 @@ from sqlalchemy import update
 from sqlalchemy.orm import Session
 from IsodataHelpers import IsodataHelpers
 from pymodbus.payload import BinaryPayloadBuilder
-from simple_pid import PID
+#from simple_pid import PID
 
 class regDataHelper(object):
 
@@ -166,7 +166,7 @@ class regDataHelper(object):
 
     #        batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
     #        batteryVoltage = float(batteryVoltage)
-    #        batteryVoltage = batteryVoltage / 340
+    #        batteryVoltage = batteryVoltage / 330
 
     #        Current = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
 
@@ -215,7 +215,8 @@ class regDataHelper(object):
             temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 32
 
             if (temperatureFahrenheit < 86):
-                  self.writeRegValue(modbusClient, 1024, 'int16' , -300)
+                 self.writeRegValue(modbusClient, 1024, 'int16' , -300)
+
             elif (temperatureFahrenheit < 87):
                   self.writeRegValue(modbusClient, 1024, 'int16' , -200)
             elif (temperatureFahrenheit >= 87):
@@ -223,26 +224,20 @@ class regDataHelper(object):
 
             batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
             batteryVoltage = float(batteryVoltage)
-            batteryVoltage = batteryVoltage / 340
+            batteryVoltage = batteryVoltage / 330
 
             CurrentAmps = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
+  
+            pid.update(loadKW)
+            newAmps = - pid.output
+            newAmps = max(min(newAmps, 74 ),0)
 
-
-           # if ((State_Watts_Dir == 8) or (State_Watts_Dir == 1)):
-
-            if (State_Watts_Dir > 1):
-                loadKW = -loadKW
-
-            newAmps = pid (loadKW)
-            p, i, d = pid.components
-            print ("p= ", p, " i = ", i, " d = ",d)
+            pid.model[3, pid.model[3,:].size -1] = -newAmps
 
             self.writeRegValue(modbusClient, 1627, 'uint16' , int (newAmps * 10))
+            print (" p= ", pid.PTerm, " i = ", pid.ITerm, " d = ",pid.DTerm)
 
-            print ("DISCHARGING loadKW = ", loadKW," newAmps = ", newAmps, "currentDirection =", State_Watts_Dir)
-
-            #else:
-            #    print("Illegal Current Direction")
+            print ("DISCHARGING loadKW = ", loadKW," newAmps = ",  newAmps, "currentDirection =", State_Watts_Dir)
 
         except BaseException as e:
                 print("peakShaving ",e)
@@ -273,25 +268,25 @@ class regDataHelper(object):
 
             batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
             batteryVoltage = float(batteryVoltage)
-            batteryVoltage = batteryVoltage / 340
+            batteryVoltage = batteryVoltage / 330
 
-            chargingCurrent = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
-
-            newChgCurrent = pid (batteryVoltage)
-            newChgCurrent = abs(newChgCurrent)
+            pid.update (batteryVoltage)
+            newChgCurrent = pid.output
             
             currentTime = datetime.now()
-            endNonChargeTime = currentTime.replace(hour = 23, minute=30, second = 0, microsecond =0)
-            startNonChargeTime = currentTime.replace(hour =1, minute=0, second = 0, microsecond =0)
+            endChargeTime = currentTime.replace(hour = 10, minute=0, second = 0, microsecond =0)
+            startChargeTime = currentTime.replace(hour =6, minute=0, second = 0, microsecond =0)
 
-            if (currentTime <=startNonChargeTime ) or (currentTime >= endNonChargeTime):
+            if (currentTime >=startChargeTime ) or (currentTime <= endChargeTime):
+
                 self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
+                print (" p= ", pid.PTerm, " i = ", pid.ITerm, " d = ",pid.DTerm)
 
+                print ("CHARGING batteryVoltage = ", batteryVoltage," newChgCurrent = ", newChgCurrent)
             else:
                 print ("Non Charge Time Window")
                 self.writeRegValue(modbusClient, 1626, 'uint16' ,round (0))
-
-            #print ("CHARGING batteryVoltage = ", batteryVoltage," newChgCurrent = ", newChgCurrent)
+           
         except BaseException as e:
                 print("chargeBatteries ",e)
   

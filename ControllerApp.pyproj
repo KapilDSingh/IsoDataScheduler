@@ -34,6 +34,7 @@
     <Compile Include="isoDataScheduler.py" />
     <Compile Include="meterData.py" />
     <Compile Include="oasisData2.py" />
+    <Compile Include="PID.py" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.7" />
