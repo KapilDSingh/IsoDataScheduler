@@ -74,7 +74,7 @@ class PID:
 
         # Windup Guard
         self.int_error = 0.0
-        self.windup_guard = 20.0
+        self.windup_guard = 8.0
 
         self.output = 0.0
 
@@ -113,10 +113,10 @@ class PID:
         self.ITermAccumulate += error * delta_time
         self.ITerm = self.Ki * self.ITermAccumulate
 
-        #if (self.ITerm < -self.windup_guard):
-        #    self.ITerm = -self.windup_guard
-        #elif (self.ITerm > self.windup_guard):
-        #    self.ITerm = self.windup_guard
+        if (self.ITerm < -74):
+            self.ITerm = -74
+        elif (self.ITerm > 8):
+            self.ITerm = 8
 
         self.DTerm = 0.0
         if delta_time > 0:

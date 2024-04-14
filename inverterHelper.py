@@ -221,6 +221,7 @@ class regDataHelper(object):
                   self.writeRegValue(modbusClient, 1024, 'int16' , -200)
             elif (temperatureFahrenheit >= 87):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 0)
+                  pid.ITermAccumulate = 0
 
             batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
             batteryVoltage = float(batteryVoltage)
@@ -230,7 +231,7 @@ class regDataHelper(object):
   
             pid.update(loadKW)
             newAmps = - pid.output
-            newAmps = max(min(newAmps, 74 ),0)
+            newAmps = min(newAmps, 74 )
 
             pid.model[3, pid.model[3,:].size -1] = -newAmps
 
@@ -259,12 +260,13 @@ class regDataHelper(object):
 
             temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 32
 
-            if (temperatureFahrenheit < 84):
+            if (temperatureFahrenheit < 83):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 100)
             elif (temperatureFahrenheit < 85):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 50)
             elif (temperatureFahrenheit >= 85):
-                  self.writeRegValue(modbusClient, 1024, 'int16' , 5)
+                  self.writeRegValue(modbusClient, 1024, 'int16' , 0)
+                  pid.ITermAccumulate = 0
 
             batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
             batteryVoltage = float(batteryVoltage)
@@ -272,19 +274,27 @@ class regDataHelper(object):
 
             pid.update (batteryVoltage)
             newChgCurrent = pid.output
+            newChgCurrent = min(newChgCurrent, 4 )
+
             
             currentTime = datetime.now()
-            endChargeTime = currentTime.replace(hour = 10, minute=0, second = 0, microsecond =0)
-            startChargeTime = currentTime.replace(hour =6, minute=0, second = 0, microsecond =0)
+            startChargeTime = currentTime.replace(hour =10, minute=30, second = 0, microsecond =0)
+            endChargeTime = currentTime.replace (hour = 11, minute=0, second = 0, microsecond =0)
 
             if (currentTime >=startChargeTime ) and (currentTime <= endChargeTime):
 
+                if (newChgCurrent < 0):
+                    newChgCurrent=0
                 self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
                 print (" p= ", pid.PTerm, " i = ", pid.ITerm, " d = ",pid.DTerm)
 
                 print ("CHARGING batteryVoltage = ", batteryVoltage," newChgCurrent = ", newChgCurrent)
             else:
+
                 print ("Non Charge Time Window")
+
+                pid.ITermAccumulate = 0
+
                 self.writeRegValue(modbusClient, 1626, 'uint16' ,round (0))
                 valType, regValue =  self.writeRegValue(modbusClient, 1024, 'int16',0)
 

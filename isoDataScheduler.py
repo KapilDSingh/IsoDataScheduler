@@ -150,6 +150,8 @@ def main():
         pidCharge.setSampleTime(30)
 
         pidCharge.output_limits = (0, 12)
+        pidCharge.ITermAccumulate = 0
+
 
         #pidDisCharge = PID(-.7,  -0.015, 0.05, setpoint=0.0)
         #p, i, d = pidDisCharge.components
