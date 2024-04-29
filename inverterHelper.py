@@ -278,8 +278,8 @@ class regDataHelper(object):
 
             
             currentTime = datetime.now()
-            startChargeTime = currentTime.replace(hour =10, minute=00, second = 0, microsecond =0)
-            endChargeTime = currentTime.replace (hour = 11, minute=0, second = 0, microsecond =0)
+            startChargeTime = currentTime.replace(hour =8, minute=00, second = 0, microsecond =0)
+            endChargeTime = currentTime.replace (hour = 9, minute=0, second = 0, microsecond =0)
 
             if (currentTime >=startChargeTime ) and (currentTime <= endChargeTime):
 
