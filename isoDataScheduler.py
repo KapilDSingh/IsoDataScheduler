@@ -145,8 +145,8 @@ def main():
         valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
         valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16',0)
 
-        pidCharge = PID.PID(3.5, 1.2, 0.05)
-        pidCharge.SetPoint = 13.6
+        pidCharge = PID.PID(1, 0.01, 0.05)
+        pidCharge.SetPoint = 14.40
         pidCharge.setSampleTime(30)
 
         pidCharge.output_limits = (0, 12)
@@ -178,7 +178,7 @@ def main():
 
         P =1.4
         I =.6
-        D = .20
+        D = 0.2
 
         pidDisCharge = PID.PID(P, I, D)
         pidDisCharge.SetPoint = targetT
@@ -200,8 +200,14 @@ def main():
 
             if (modbusClient != None):
                 if (psPeakOn == False and rtoPeakOn == False):
+
+                    pidDisCharge.ITermAccumulate = 0
                     batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
+
                 else:
+
+                    pidCharge.ITermAccumulate = 0
+
                     loadKW, newAmps= inverterHelper.peakShave(modbusClient, timestamp, loadKW, State_Watts_Dir , isoHelper, pidDisCharge)
                     updatePlot(pidDisCharge)
 

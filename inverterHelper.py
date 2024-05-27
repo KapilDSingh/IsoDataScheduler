@@ -248,7 +248,7 @@ class regDataHelper(object):
 
 
     def chargeBatteries(self, modbusClient, pid):
-
+        return
         try:
             batteryVoltage = None
             chargingCurrent = None
@@ -274,12 +274,12 @@ class regDataHelper(object):
 
             pid.update (batteryVoltage)
             newChgCurrent = pid.output
-            newChgCurrent = min(newChgCurrent, 4 )
+            newChgCurrent = min(newChgCurrent, 14 )
 
             
             currentTime = datetime.now()
-            startChargeTime = currentTime.replace(hour =8, minute=00, second = 0, microsecond =0)
-            endChargeTime = currentTime.replace (hour = 9, minute=0, second = 0, microsecond =0)
+            startChargeTime = currentTime.replace(hour =14, minute=00, second = 0, microsecond =0)
+            endChargeTime = currentTime.replace (hour = 21, minute=0, second = 0, microsecond =0)
 
             if (currentTime >=startChargeTime ) and (currentTime <= endChargeTime):
 
