@@ -248,7 +248,7 @@ class regDataHelper(object):
 
 
     def chargeBatteries(self, modbusClient, pid):
-        return
+        return 0,0
         try:
             batteryVoltage = None
             chargingCurrent = None
