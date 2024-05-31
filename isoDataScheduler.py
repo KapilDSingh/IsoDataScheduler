@@ -145,7 +145,7 @@ def main():
         valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
         valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16',0)
 
-        pidCharge = PID.PID(1, 0.01, 0.05)
+        pidCharge = PID.PID(.8, 0.007, 0.05)
         pidCharge.SetPoint = 14.40
         pidCharge.setSampleTime(30)
 

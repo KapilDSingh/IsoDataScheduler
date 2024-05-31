@@ -120,6 +120,12 @@ class PID:
 
         self.output = self.PTerm + self.ITerm + self.DTerm
 
+        if (self.output < self.output_limits[0]):
+            self.output = self.output_limits[0]
+        elif (self.output > self.output_limits[1]):
+            self.output = self.output_limits[1]
+
+
         elapsed_time = self.current_time - self.start_time
         newModelValues =np.array([[elapsed_time/60], [self.SetPoint], [feedback_value], [self.output] ])
 
