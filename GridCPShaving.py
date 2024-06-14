@@ -156,7 +156,7 @@ class GridCPShaving(object):
                     dailyPeakOn = True
 
                     HighestPeaksDf = self.CheckCPShaveHour(DataTbl, minLoad,  isoHelper)
-                    if  (np.datetime64(peakDf['timestamp'][0]) in HighestPeaksDf['timestamp'].values):
+                    if  (np.datetime64(peakDf['timestamp'][0])  in HighestPeaksDf['timestamp'].values):
                         peakDf.at[0, 'Peak'] = 2
                         peakOn = True
                     else:

@@ -21,7 +21,8 @@ from sqlalchemy import update
 from sqlalchemy.orm import Session
 from IsodataHelpers import IsodataHelpers
 from pymodbus.payload import BinaryPayloadBuilder
-#from simple_pid import PID
+import time
+import numpy as np
 
 class regDataHelper(object):
 
@@ -146,61 +147,9 @@ class regDataHelper(object):
         finally:
             return  valType, regValue
 
-    #def shavePeak(self, modbusClient, meterData, isoHelper):
-
-    #    try:
-    #        batteryVoltage = None
-    #        Current = None
-    #        disChargingKW = None
-    #        currentKW = None
-
-    #        temperatureCelsius= self.readRegValue(modbusClient, 157, 1, 'int16')
-    #        temperatureFahrenheit = float(temperatureCelsius)  * 9 / 5 + 34
-
-    #        if (temperatureFahrenheit < 78):
-    #              self.writeRegValue(modbusClient, 1627, 'uint16' , 74*10)
-    #        elif (temperatureFahrenheit < 82):
-    #              self.writeRegValue(modbusClient, 1627, 'uint16' , 30 * 10)
-    #        elif (temperatureFahrenheit >= 82):
-    #              self.writeRegValue(modbusClient, 1627, 'uint16' , 0)
-
-    #        batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
-    #        batteryVoltage = float(batteryVoltage)
-    #        batteryVoltage = batteryVoltage / 330
-
-    #        Current = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
-
-    #        timestamp, KW, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
-
-    #        if (State_Watts_Dir == 8):
-    #            KW = -KW
 
 
-    #        currentKW =  float(self.readRegValue(modbusClient, 1024, 1, 'int16')) / 10
-
-    #        disChargingKW = 0
-
-    #        if (batteryVoltage >= 11.3):
-    #  
-    #            disChargingKW = currentKW - KW + 0.5
-
-    #        else:
-    #            disChargingKW = 0
-
-    #        print ("currentDirection =", State_Watts_Dir, " KW = ", KW, " Current KW = ", currentKW, " disChargingKW = ", disChargingKW)
-
-
-    #        valType, regValue =  self.writeRegValue(modbusClient, 1024, 'int16' , int(round (disChargingKW * 10)))
-
-    #    except BaseException as e:
-    #            print("shavePeak ",e)
-  
-    #    finally:
-    #        #print ("DISCHARGING batteryVoltage = ", batteryVoltage,  " Current = ", Current, " currentKW = ", currentKW,  " disChargingKW = ", disChargingKW)
-    #        return  batteryVoltage, Current, currentKW,  disChargingKW
-
-
-    def peakShave(self, modbusClient,   timestamp, loadKW, State_Watts_Dir, isoHelper, pid):
+    def peakShave(self, modbusClient,  loadKW, State_Watts_Dir, pid, graphics):
         try:
             batteryVoltage = None
             CurrentAmps = None
@@ -229,16 +178,23 @@ class regDataHelper(object):
 
             CurrentAmps = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
   
-            pid.update(loadKW)
-            newAmps = - pid.output
-            newAmps = max(min(newAmps, 74 ),0)
-
-            pid.model[3, pid.model[3,:].size -1] = -newAmps
+            newAmps = pid(loadKW)
 
             self.writeRegValue(modbusClient, 1627, 'uint16' , int (newAmps * 10))
-            print (" p= ", pid.PTerm, " i = ", pid.ITerm, " d = ",pid.DTerm)
+            p, i, d = pid.components 
+            print (" p= ",p, " i = ",i, " d = ",d)
 
             print ("DISCHARGING loadKW = ", loadKW," newAmps = ",  newAmps, "currentDirection =", State_Watts_Dir)
+            
+            elapsed_time = time.time() - graphics.StartTime
+
+            newModelValues =np.array([[elapsed_time/60], [pid.setpoint], [loadKW], [newAmps] ])
+
+            print ("newModelValues ", newModelValues)
+
+            graphics.model = np.hstack(( graphics.model, newModelValues))
+
+            graphics.updatePlot()
 
         except BaseException as e:
                 print("peakShaving ",e)
@@ -247,8 +203,8 @@ class regDataHelper(object):
             return  loadKW, newAmps
 
 
-    def chargeBatteries(self, modbusClient, pid):
-        return 0,0
+    def chargeBatteries(self, modbusClient, pid, graphics):
+
         try:
             batteryVoltage = None
             chargingCurrent = None
@@ -266,39 +222,33 @@ class regDataHelper(object):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 50)
             elif (temperatureFahrenheit >= 85):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 0)
-                  pid.ITermAccumulate = 0
+
 
             batteryVoltage = self.readRegValue(modbusClient, 493, 1, 'int16')
             batteryVoltage = float(batteryVoltage)
             batteryVoltage = batteryVoltage / 330
 
-            pid.update (batteryVoltage)
-            newChgCurrent = pid.output
-            newChgCurrent = min(newChgCurrent, 14 )
+            newChgCurrent = pid (batteryVoltage)
 
-            
-            currentTime = datetime.now()
-            startChargeTime = currentTime.replace(hour =14, minute=00, second = 0, microsecond =0)
-            endChargeTime = currentTime.replace (hour = 21, minute=0, second = 0, microsecond =0)
-
-            if (currentTime >=startChargeTime ) and (currentTime <= endChargeTime):
-
-                if (newChgCurrent < 0):
+            if (newChgCurrent < 0):
                     newChgCurrent=0
-                self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
-                print (" p= ", pid.PTerm, " i = ", pid.ITerm, " d = ",pid.DTerm)
 
-                print ("CHARGING batteryVoltage = ", batteryVoltage," newChgCurrent = ", newChgCurrent)
-            else:
+            self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
+            p, i, d = pid.components 
+            print (" p= ",p, " i = ",i, " d = ",d)
 
-                print ("Non Charge Time Window")
+            print ("CHARGING batteryVoltage = ", batteryVoltage," newChgCurrent = ", newChgCurrent)
+            
+            elapsed_time = time.time() - graphics.StartTime
 
-                pid.ITermAccumulate = 0
+            newModelValues =np.array([[elapsed_time/60], [pid.setpoint], [batteryVoltage], [newChgCurrent] ])
 
-                self.writeRegValue(modbusClient, 1626, 'uint16' ,round (0))
-                valType, regValue =  self.writeRegValue(modbusClient, 1024, 'int16',0)
+            print ("newModelValues ", newModelValues)
 
-           
+            graphics.model = np.hstack(( graphics.model, newModelValues))
+
+            graphics.updatePlot()
+
         except BaseException as e:
                 print("chargeBatteries ",e)
   

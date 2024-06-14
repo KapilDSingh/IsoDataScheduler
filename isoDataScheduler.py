@@ -6,9 +6,10 @@ from sys import path
 import pandas as pd
 from pandas.io import sql
 
-import time
 from DataMiner import DataMiner
 from IsodataHelpers import IsodataHelpers
+from PID import initChargePid, initDisChargePid
+from graphics import graphics
 from meterData import MeterData
 import matplotlib
 from datetime import datetime
@@ -17,13 +18,20 @@ from GridCPShaving import GridCPShaving
 from datetime import datetime, timedelta
 import numpy as np
 import matplotlib.pyplot as plt  
+from simple_pid import PID as Pid
 import time
-
 
 from inverterHelper import regDataHelper as inverterDataHelper
 
-import PID as PID
 import os.path
+
+
+from enum import Enum
+ 
+class States(Enum):
+    CHARGING = 1
+    DISCHARGING = 2
+    INACTIVE = 3
 
 def main():
 
@@ -47,80 +55,6 @@ def main():
 
             print(df)
             return psPeakOn, rtoPeakOn
-   
- 
-        def updatePlot(pid):
-        
-            x = pid.model[0,:]
-            new_y =  pid.model[3,:]
-            new_y2 =  pid.model[2,:]
-
-                       
-            #plt.subplot(2,1,1)
-	        # updating data values
-            pid.hlOP.set_xdata(x)
-            pid.hlOP.set_ydata(new_y)
-
-            minVal = min(new_y)
-            maxVal = max(new_y)
-
-            plt.ylim(minVal,maxVal)
-            plt.xlim(0, max(x))
-
-            pid.axOP.plot(x,new_y, 'b:',label= 'OP')
-
-            pid.hlPV.set_xdata(x)
-            pid.hlPV.set_ydata(new_y2)
-
-            minVal = min(new_y2)
-            maxVal = max(new_y2)
-            plt.ylim(minVal,maxVal)
-
-            pid.axPV.plot(x,new_y2, 'r--', label= 'PV')
-
-
-	        # drawing updated values
-            pid.pltFig.canvas.draw()
-
-	        # This will run the GUI event
-	        # loop until all UI events
-	        # currently waiting have been processed
-            pid.pltFig.canvas.flush_events()
-
-            time.sleep(0.1)
-
-        def initPlot(pid):
-
-            # creating initial data values
-            # of x and y
-            x = np.linspace(0, 100, 100)
-            y = np.sin(x)
-            y2 = 10 * np.cos(x)
-
-            # to run GUI event loop
-            plt.ion()
-
-            pid.pltFig = plt.figure( figsize=(10, 8))
-
-            pid.axOP = plt.subplot(211)
-
-            pid.hlOP, = pid.axOP.plot(x, y, 'b:',label= 'OP')
-
-            plt.ylabel('Current (Amps)')
-            plt.grid()
-
-            plt.legend()
-
-            pid.axPV = plt.subplot(212, sharex=pid.axOP)
- 
- 
-            pid.hlPV, = pid.axPV.plot(x, y2, 'r--',label= 'PV')
-
-            plt.ylabel('Net Power (KW)')
-            plt.xlabel('Time (minutes)')
-            plt.grid()
-            plt.legend()
-
 
         dataMiner = DataMiner()
         isoHelper = IsodataHelpers()
@@ -128,7 +62,8 @@ def main():
         GCPShave = GridCPShaving()
         inverterHelper = inverterDataHelper()
 
-        relayState =0
+        Graphics = graphics()
+        InverterState = States.INACTIVE
 
         isoHelper.emptyAllTbls()
     
@@ -143,15 +78,9 @@ def main():
         modbusClient =  inverterHelper.connectInverter()
 
         valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1001, 'int16', 1)
+
+        valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1003, 'int16', 1)
         valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16',0)
-
-        pidCharge = PID.PID(.8, 0.007, 0.05)
-        pidCharge.SetPoint = 14.40
-        pidCharge.setSampleTime(30)
-
-        pidCharge.output_limits = (0, 12)
-        pidCharge.ITermAccumulate = 0
-
 
         #pidDisCharge = PID(-.7,  -0.015, 0.05, setpoint=0.0)
         #p, i, d = pidDisCharge.components
@@ -159,39 +88,26 @@ def main():
         #pidDisCharge.output_limits = (0, 74)
         #print ("Initial p= ", p, " i = ", i, " d = ",d)
 
-        targetT = 0
-        #P =1.7
-        #I = .08
-        #D = .05
-
-        P =1.5
-        I = .1
-        D = .05
-
-        P =1.8
-        I = .3
-        D = .05
-
-        P =1.6
-        I =.4
-        D = .0
-
         P =1.4
         I =.6
         D = 0.2
 
-        pidDisCharge = PID.PID(P, I, D)
-        pidDisCharge.SetPoint = targetT
-        pidDisCharge.setSampleTime(30)   
 
         #inverterHelper.updateDBRegValues(modbusClient)
-        initPlot(pidDisCharge)
+
+        Graphics.initPlot()
 
         while True:
 
-            psPeakOn, rtoPeakOn = putIsoData(dataMiner,isoHelper)
+            print ('Inverter State = ', InverterState.name )
 
-            print (' Fetch Meter Data')
+            if (InverterState == States.INACTIVE):
+                  pidCharge = initChargePid(inverterHelper, modbusClient)
+                  pidDisCharge = initDisChargePid(inverterHelper, modbusClient)
+                  Graphics.zeroModel()
+
+
+            psPeakOn, rtoPeakOn = putIsoData(dataMiner,isoHelper)
 
             timestamp, RMS_Watts_Net, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
 
@@ -199,42 +115,34 @@ def main():
              loadKW = RMS_Watts_Net / 1000
 
             if (modbusClient != None):
+
+                currentTime = datetime.now()
+                startChargeTime = currentTime.replace(hour =19, minute=00, second = 0, microsecond =0)
+                endChargeTime = currentTime.replace (hour = 22, minute=0, second = 0, microsecond =0)
+
                 if (psPeakOn == False and rtoPeakOn == False):
 
-                    pidDisCharge.ITermAccumulate = 0
-                    batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge)
+                   if  (True): #((currentTime >=startChargeTime ) and (currentTime <= endChargeTime)):
 
-                else:
+                       if  (InverterState != States.CHARGING):
+                            Graphics.StartTime = time.time()
+                            InverterState = States.CHARGING
+                            pidCharge.reset()
+                            pidCharge = initChargePid(inverterHelper, modbusClient)                  
 
-                    pidCharge.ITermAccumulate = 0
+                       batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge, Graphics)
+                       
+                   else:
+                        InverterState = States.INACTIVE
 
-                    loadKW, newAmps= inverterHelper.peakShave(modbusClient, timestamp, loadKW, State_Watts_Dir , isoHelper, pidDisCharge)
-                    updatePlot(pidDisCharge)
+                else:                    
+                    if  (InverterState != States.DISCHARGING):
+                            Graphics.StartTime = time.time()
+                            InverterState = States.DISCHARGING
+                            pidDisCharge.reset()
+                            pidDisCharge = initDisChargePid(inverterHelper, modbusClient)                  
 
-                #Results = isoHelper.call_procedure("[ISPeakShavingON]", [])
-                #if (len(Results) == 1):
-                #    timestamp = Results[0][0]
-                #    Results = isoHelper.call_procedure("[TurnPeakShavingOn] ?", timestamp)
-                #    if (len(Results) == 1):
-                #       relayState =1
-
-                #Results = isoHelper.call_procedure("[ISPeakShavingOFF]", [])
-                #if (len(Results) == 1):
-                #    timestamp = Results[0][0]
-                #    Results = isoHelper.call_procedure("[ChkShavingOff] ?", timestamp)
-                #    if (len(Results) == 0):
-                #        Results = isoHelper.call_procedure("[ChkLoadDecreasing] ?", timestamp)
-                #        if (len(Results) == 1):
-                #                relayState = 0
-                #                Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
-
-                #        else:
-                #            Results = isoHelper.call_procedure("[ChkOverTime] ?", timestamp)
-                #            if (len(Results) ==1):
-                #                    relayState = 0
-                #                    Results = isoHelper.call_procedure("[UpdateShaveTimes] ?",timestamp)
-              
-            #isoHelper.SetRelayState(relayState)
+                    loadKW, newAmps= inverterHelper.peakShave(modbusClient, loadKW, State_Watts_Dir , pidDisCharge, Graphics)
 
             if (psPeakOn == False and rtoPeakOn == False):
                  time.sleep(60)
