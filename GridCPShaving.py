@@ -143,7 +143,7 @@ class GridCPShaving(object):
                     if (Area == 'PJM RTO'):
                         minLoad = 135000
                     else:
-                        minLoad = 8000
+                        minLoad = 8900
 
                     peakStartTime = peakDf['timestamp'][0]  + timedelta(hours =-1)
                     oneHourAftPeakHour = peakDf['timestamp'][0]  + timedelta(hours =1)
