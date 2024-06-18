@@ -220,8 +220,8 @@ class GridCPShaving(object):
 
             sql_query = "SELECT TOP (5) timestamp \
                 FROM  " + forecastTbl + \
-            " WHERE (Peak > 0) AND (timestamp >= '2023-6-1') and \
-            (timestamp < '2023-10-1') and \
+            " WHERE (Peak > 0) AND (timestamp >= '2024-6-1') and \
+            (timestamp < '2024-10-1') and \
             (HrlyForecstLoad / ForecstNumReads) > "  + str(minLoad)  + \
             " order by (HrlyForecstLoad / ForecstNumReads) desc"
 
