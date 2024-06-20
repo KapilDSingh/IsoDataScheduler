@@ -108,6 +108,7 @@ def main():
 
 
             psPeakOn, rtoPeakOn = putIsoData(dataMiner,isoHelper)
+            print (" psPeakOn = ",psPeakOn, "  rtoPeakOn =  ", rtoPeakOn)
 
             timestamp, RMS_Watts_Net, State_Watts_Dir = meterData.fetchMeterData('550001081', 1, isoHelper)
 
@@ -140,14 +141,15 @@ def main():
                             Graphics.StartTime = time.time()
                             InverterState = States.DISCHARGING
                             pidDisCharge.reset()
-                            pidDisCharge = initDisChargePid(inverterHelper, modbusClient)                  
+                            pidDisCharge = initDisChargePid(inverterHelper, modbusClient)    
+                            Graphics.zeroModel()                            
 
                     loadKW, newAmps= inverterHelper.peakShave(modbusClient, loadKW, State_Watts_Dir , pidDisCharge, Graphics)
 
             if (psPeakOn == False and rtoPeakOn == False):
                  time.sleep(60)
             else:
-                time.sleep(30)
+                time.sleep(60)
 
 
         valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1002, 'int16', 1)
