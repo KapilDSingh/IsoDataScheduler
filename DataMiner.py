@@ -32,7 +32,8 @@ class DataMiner(object):
 
     headers = {'Ocp-Apim-Subscription-Key': '66e17241413e4462b597005b135e0c79'}
 
-    peakOnHrly = False
+    peakOnHrlyPJM = False
+    peakOnHrlyPS = False
     peakOn5min = False
 
     
@@ -185,9 +186,11 @@ class DataMiner(object):
                    isoHelper.saveLoadDf(Area, True, forecastDf);
                    
                    DataMiner.peakOn5min = GCPShave.findPeaks(oldestTimestamp, Area, False, isoHelper)
-                   DataMiner.peakOnHrly = GCPShave.findPeaks(oldestTimestamp,Area, True, isoHelper)
 
-
+                   if (Area == 'ps'):
+                       DataMiner.peakOnHrlyPS = GCPShave.findPeaks(oldestTimestamp,Area, True, isoHelper)
+                   else:
+                       DataMiner.peakOnHrlyPJM = GCPShave.findPeaks(oldestTimestamp,Area, True, isoHelper)
 
                    startDayTime = newestEvaluatedAt.replace(hour = 0, minute=0, second = 0, microsecond =0)
                    params= [Area, False,  newestEvaluatedAt, startDayTime]
@@ -199,7 +202,10 @@ class DataMiner(object):
         except Exception as e:
                print("fetch_LoadForecast",e)
         finally:
-                return DataMiner.peakOnHrly
+                   if (Area == 'ps'):
+                       return DataMiner.peakOnHrlyPS
+                   else:
+                       return DataMiner.peakOnHrlyPJM
 
     def fetch_YrHrlyEvalLoadForecast(self, oldestTimeStamp, Area, isoHelper):
         try:

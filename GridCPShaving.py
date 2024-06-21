@@ -159,52 +159,53 @@ class GridCPShaving(object):
                     if  (np.datetime64(peakDf['timestamp'][0])  in HighestPeaksDf['timestamp'].values):
                         peakDf.at[0, 'Peak'] = 2
                         peakOn = True
+ 
+                        if  ((peakStartTime <= currentTimeStamp5min) and (currentTimeStamp5min <= peakDf['timestamp'][0])):
+                            print ('Time = ', currentTimeStamp5min.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
+
+                            EvalAt = peakDf['EvaluatedAt'][0]
+                            NumReads = peakDf['ForecstNumReads'][0]
+                            HrlyForecstLoad =  peakDf['HrlyForecstLoad'][0]
+                            load = peakDf['HrlyForecstLoad'][0] /  peakDf['ForecstNumReads']
+                            currentHrlyLoad = load.loc[0]
+
+                        elif (currentTimeStamp5min > peakDf['timestamp'][0]) and (currentTimeStamp5min <= oneHourAftPeakHour) :
+
+                            params= [peakDf['timestamp'][0], Area]
+                            Results = isoHelper.call_procedure("[NewIsLoadDecreasing] ?, ?",params)
+
+                            EvalAt = Results[0][1]
+                            NumReads =  Results[0][2]
+                            HrlyForecstLoad =  Results[0][3]
+                            currentHrlyLoad = Results[0][4]
+                            prevHrlyLoad = Results[0][7]
+
+                            if (prevHrlyLoad > currentHrlyLoad):
+                                dailyPeakOn = False
+                                print ('Time = ', currentTimeStamp5min.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
+                            else:
+                                dailyPeakOn = True
+
+                        else:
+                                dailyPeakOn = False
+                                print ('Time = ', currentTimeStamp5min.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving. It is either before start time or after peak shaving time")
+
+                                EvalAt = currentTimeStamp5min
+                                NumReads =  0
+                                HrlyForecstLoad =  0
+                                currentHrlyLoad = 0
+                                prevHrlyLoad = 0
+
+                        data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], EvalAt, peakStartTime, NumReads, HrlyForecstLoad, currentHrlyLoad, dailyPeakOn]]
+
+                        peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad', 'DailyPeakON'])
+
+                        ret= isoHelper.saveDf(DataTbl='peakSignalTbl', Data= peakSignalDf)
+                        if (ret == False):
+                            print ("2 ret =", ret)
                     else:
                         peakOn = False
 
-                    if  ((peakStartTime <= currentTimeStamp5min) and (currentTimeStamp5min <= peakDf['timestamp'][0])):
-                        print ('Time = ', currentTimeStamp5min.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "START Shaving")
-
-                        EvalAt = peakDf['EvaluatedAt'][0]
-                        NumReads = peakDf['ForecstNumReads'][0]
-                        HrlyForecstLoad =  peakDf['HrlyForecstLoad'][0]
-                        load = peakDf['HrlyForecstLoad'][0] /  peakDf['ForecstNumReads']
-                        currentHrlyLoad = load.loc[0]
-
-                    elif (currentTimeStamp5min > peakDf['timestamp'][0]) and (currentTimeStamp5min <= oneHourAftPeakHour) :
-
-                        params= [peakDf['timestamp'][0], Area]
-                        Results = isoHelper.call_procedure("[NewIsLoadDecreasing] ?, ?",params)
-
-                        EvalAt = Results[0][1]
-                        NumReads =  Results[0][2]
-                        HrlyForecstLoad =  Results[0][3]
-                        currentHrlyLoad = Results[0][4]
-                        prevHrlyLoad = Results[0][7]
-
-                        if (prevHrlyLoad > currentHrlyLoad):
-                            dailyPeakOn = False
-                            print ('Time = ', currentTimeStamp5min.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
-                        else:
-                            dailyPeakOn = True
-
-                    else:
-                            dailyPeakOn = False
-                            print ('Time = ', currentTimeStamp5min.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving. It is either before start time or after peak shaving time")
-
-                            EvalAt = currentTimeStamp5min
-                            NumReads =  0
-                            HrlyForecstLoad =  0
-                            currentHrlyLoad = 0
-                            prevHrlyLoad = 0
-
-                    data =[ [peakDf['timestamp'][0], Area, peakDf['Peak'][0], EvalAt, peakStartTime, NumReads, HrlyForecstLoad, currentHrlyLoad, dailyPeakOn]]
-
-                    peakSignalDf = pd.DataFrame(data, columns=['timestamp', 'Area', 'Peak', 'EvaluatedAt', 'startPeakTime', 'ForecstNumReads', 'HrlyForecstLoad', 'HrlyLoad', 'DailyPeakON'])
-
-                    ret= isoHelper.saveDf(DataTbl='peakSignalTbl', Data= peakSignalDf)
-                    if (ret == False):
-                        print ("2 ret =", ret)
 
         except BaseException as e:
             print("findPeaks",e)
