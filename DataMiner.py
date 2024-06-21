@@ -197,6 +197,8 @@ class DataMiner(object):
                    isoHelper.call_procedure("[InsertRefreshDataTbl] ?, ?, ?, ?",params)
                    params= [Area, True, newestEvaluatedAt, startDayTime]
                    isoHelper.call_procedure("[InsertRefreshDataTbl] ?, ?, ?, ?",params)
+               else:
+                   print ("DataMiner no new data")
 
 
         except Exception as e:

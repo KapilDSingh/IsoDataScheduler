@@ -184,6 +184,7 @@ class GridCPShaving(object):
                                 dailyPeakOn = False
                                 print ('Time = ', currentTimeStamp5min.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "STOP Shaving")
                             else:
+                                print ('Time = ', currentTimeStamp5min.strftime("%d/%m/%Y %H:%M"), 'Area = ', Area, "Extended Shaving")
                                 dailyPeakOn = True
 
                         else:

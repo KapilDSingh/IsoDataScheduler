@@ -129,7 +129,9 @@ def main():
                             Graphics.StartTime = time.time()
                             InverterState = States.CHARGING
                             pidCharge.reset()
-                            pidCharge = initChargePid(inverterHelper, modbusClient)                  
+                            pidCharge = initChargePid(inverterHelper, modbusClient)   
+                            Graphics.zeroModel()
+
 
                        batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge, Graphics)
                        

@@ -89,7 +89,7 @@ class regDataHelper(object):
             else :
                 regValue=None
                    
-            print("readRegValue, Register = ", regAddress, " Register Value = ", regValue)
+            #print("readRegValue, Register = ", regAddress, " Register Value = ", regValue)
 
         except BaseException as e:
                 print("readRegValue ",e)
@@ -137,7 +137,7 @@ class regDataHelper(object):
             rr =  modbusClient.write_registers(regAddress, registers, unit=1)
             assert not rr.isError()
 
-            print("writeRegValue, Register = ", regAddress, " Register Value = ", regValue)
+            #print("writeRegValue, Register = ", regAddress, " Register Value = ", regValue)
 
         except BaseException as e:
                 print("Exception writeRegValue, Register = ", regAddress, " Register Value = ", regValue)
