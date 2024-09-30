@@ -122,8 +122,8 @@ def main():
                 endChargeTime = currentTime.replace (hour = 22, minute=0, second = 0, microsecond =0)
 
                 if (psPeakOn == False and rtoPeakOn == False):
-
-                   if  (True): #((currentTime >=startChargeTime ) and (currentTime <= endChargeTime)):
+                    ### Set to TRUE TO CHARGE BATTERIES
+                   if  (False): #((currentTime >=startChargeTime ) and (currentTime <= endChargeTime)):
 
                        if  (InverterState != States.CHARGING):
                             Graphics.StartTime = time.time()
