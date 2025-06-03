@@ -117,26 +117,31 @@ def main():
 
             if (modbusClient != None):
 
-                currentTime = datetime.now()
-                startChargeTime = currentTime.replace(hour =19, minute=00, second = 0, microsecond =0)
-                endChargeTime = currentTime.replace (hour = 22, minute=0, second = 0, microsecond =0)
-
                 if (psPeakOn == False and rtoPeakOn == False):
-                    ### Set to TRUE TO CHARGE BATTERIES
-                   if  (False): #((currentTime >=startChargeTime ) and (currentTime <= endChargeTime)):
 
-                       if  (InverterState != States.CHARGING):
-                            Graphics.StartTime = time.time()
-                            InverterState = States.CHARGING
-                            pidCharge.reset()
-                            pidCharge = initChargePid(inverterHelper, modbusClient)   
-                            Graphics.zeroModel()
+                    if  (InverterState == States.DISCHARGING):
+                       InverterState = States.INACTIVE
+
+                    currentTime = datetime.now()
+                    startChargeTime = currentTime.replace(hour =12, minute=40, second = 0, microsecond =0)
+                    endChargeTime = currentTime.replace (hour = 22, minute=0, second = 0, microsecond =0)
 
 
-                       batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge, Graphics)
+                    if  ((currentTime >=startChargeTime ) and (currentTime <= endChargeTime)):
+
+                           if  (InverterState != States.CHARGING):
+                                Graphics.StartTime = time.time()
+                                InverterState = States.CHARGING
+                                pidCharge.reset()
+                                pidCharge = initChargePid(inverterHelper, modbusClient)   
+                                Graphics.zeroModel()
+
+
+                           batteryVoltage, chargingCurrent =  inverterHelper.chargeBatteries(modbusClient, pidCharge, Graphics)
                        
-                   else:
-                        InverterState = States.INACTIVE
+                    else:
+                            InverterState = States.INACTIVE
+                            pidCharge.reset()
 
                 else:                    
                     if  (InverterState != States.DISCHARGING):

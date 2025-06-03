@@ -182,7 +182,7 @@ class regDataHelper(object):
 
             self.writeRegValue(modbusClient, 1627, 'uint16' , int (newAmps * 10))
             p, i, d = pid.components 
-            print (" p= ",p, " i = ",i, " d = ",d)
+            print (" DISCHARGING p= ",p, " i = ",i, " d = ",d)
 
             print ("DISCHARGING loadKW = ", loadKW," newAmps = ",  newAmps, "currentDirection =", State_Watts_Dir)
             
@@ -207,7 +207,7 @@ class regDataHelper(object):
 
         try:
             batteryVoltage = None
-            chargingCurrent = None
+            newChgCurrent = None
 
             temperatureCelsius= self.readRegValue(modbusClient, 157, 1, 'int16')
 
@@ -235,7 +235,7 @@ class regDataHelper(object):
 
             self.writeRegValue(modbusClient, 1626, 'uint16' ,round (newChgCurrent * 10))
             p, i, d = pid.components 
-            print (" p= ",p, " i = ",i, " d = ",d)
+            print ("CHARGING  p= ",p, " i = ",i, " d = ",d)
 
             print ("CHARGING batteryVoltage = ", batteryVoltage," newChgCurrent = ", newChgCurrent)
             
@@ -253,7 +253,7 @@ class regDataHelper(object):
                 print("chargeBatteries ",e)
   
         finally:
-            return  batteryVoltage, chargingCurrent
+            return  batteryVoltage, newChgCurrent
 
     def updateDBRegValues(self,  modbusClient): 
         try:
