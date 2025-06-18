@@ -1,5 +1,5 @@
 SELECT        TOP (15) psHrlyForecstTbl.timestamp, psHrlyForecstTbl.HrlyForecstLoad / psHrlyForecstTbl.ForecstNumReads AS HrlyLoad, psHrlyForecstTbl.Peak, psHrlyForecstTbl.EvaluatedAt, meterTbl.RMS_Watts_Net
 FROM            psHrlyForecstTbl INNER JOIN
                          meterTbl ON psHrlyForecstTbl.timestamp = meterTbl.timestamp
-WHERE        (psHrlyForecstTbl.timestamp > '2024-1-1') AND (psHrlyForecstTbl.Peak = 2)
+WHERE        (psHrlyForecstTbl.timestamp > '2025-1-1') AND (psHrlyForecstTbl.Peak = 2)
 ORDER BY HrlyLoad DESC

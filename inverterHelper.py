@@ -39,9 +39,10 @@ class regDataHelper(object):
 
         modbusConnection = False
  
-        modbusClient = ModbusTcpClient('4hunterstreet.dyndns.org', 502, timeout =30)
+        while ( modbusConnection == False):
+            modbusClient = ModbusTcpClient('4hunterstreet.dyndns.org', 502, timeout =10)
 
-        modbusConnection = modbusClient.connect( )
+            modbusConnection = modbusClient.connect( )
 
         if (modbusConnection ):
            return modbusClient
@@ -92,7 +93,7 @@ class regDataHelper(object):
             #print("readRegValue, Register = ", regAddress, " Register Value = ", regValue)
 
         except BaseException as e:
-                print("readRegValue ",e)
+                print("readRegValue register =  ",regAddress,"   ",e )
                 return None
   
         finally:
@@ -218,9 +219,9 @@ class regDataHelper(object):
 
             if (temperatureFahrenheit < 83):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 100)
-            elif (temperatureFahrenheit < 85):
+            elif (temperatureFahrenheit < 88):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 50)
-            elif (temperatureFahrenheit >= 85):
+            elif (temperatureFahrenheit >= 88):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 0)
 
 

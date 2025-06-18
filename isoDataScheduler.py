@@ -123,8 +123,8 @@ def main():
                        InverterState = States.INACTIVE
 
                     currentTime = datetime.now()
-                    startChargeTime = currentTime.replace(hour =12, minute=40, second = 0, microsecond =0)
-                    endChargeTime = currentTime.replace (hour = 22, minute=0, second = 0, microsecond =0)
+                    startChargeTime = currentTime.replace(hour =6, minute=30, second = 0, microsecond =0)
+                    endChargeTime = currentTime.replace (hour = 20, minute=0, second = 0, microsecond =0)
 
 
                     if  ((currentTime >=startChargeTime ) and (currentTime <= endChargeTime)):
@@ -159,7 +159,7 @@ def main():
                 time.sleep(60)
 
 
-        valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1002, 'int16', 1)
+        #valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1002, 'int16', 1)
 
 main()
 
