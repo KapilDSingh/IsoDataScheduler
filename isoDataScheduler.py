@@ -127,7 +127,7 @@ def main():
                     endChargeTime = currentTime.replace (hour = 20, minute=0, second = 0, microsecond =0)
 
 
-                    if  ((currentTime >=startChargeTime ) and (currentTime <= endChargeTime)):
+                    if  (True):#((currentTime >=startChargeTime ) and (currentTime <= endChargeTime)):
 
                            if  (InverterState != States.CHARGING):
                                 Graphics.StartTime = time.time()

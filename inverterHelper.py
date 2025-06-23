@@ -179,7 +179,7 @@ class regDataHelper(object):
 
             CurrentAmps = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
   
-            newAmps = pid(loadKW)
+            newAmps = pid(loadKW - 1.5)
 
             self.writeRegValue(modbusClient, 1627, 'uint16' , int (newAmps * 10))
             p, i, d = pid.components 
@@ -219,9 +219,9 @@ class regDataHelper(object):
 
             if (temperatureFahrenheit < 83):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 100)
-            elif (temperatureFahrenheit < 88):
+            elif (temperatureFahrenheit < 92):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 50)
-            elif (temperatureFahrenheit >= 88):
+            elif (temperatureFahrenheit >=92):
                   self.writeRegValue(modbusClient, 1024, 'int16' , 0)
 
 
