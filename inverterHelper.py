@@ -156,7 +156,7 @@ class regDataHelper(object):
             CurrentAmps = None
             newAmps = None
             supplyKW = None
-
+           
             temperatureCelsius=  self.readRegValue(modbusClient, 157, 1, 'int16')
 
             if (temperatureCelsius == None):
@@ -179,8 +179,9 @@ class regDataHelper(object):
 
             CurrentAmps = float(self.readRegValue(modbusClient, 492, 1, 'int16')) / 10
   
-            newAmps = pid(loadKW - 1.5)
-
+            newAmps = pid(loadKW - 2.5)
+            ###############################################################
+            #newAmps = 0
             self.writeRegValue(modbusClient, 1627, 'uint16' , int (newAmps * 10))
             p, i, d = pid.components 
             print (" DISCHARGING p= ",p, " i = ",i, " d = ",d)

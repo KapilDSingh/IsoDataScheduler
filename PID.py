@@ -11,7 +11,7 @@ def initChargePid(inverterHelper, modbusClient):
         pidCharge = Pid(ChrgKp, ChrgKi, ChrgKd, setpoint = ChrgSetPoint)
 
         pidCharge.sample_time = 30
-        pidCharge.output_limits = (0, 7)
+        pidCharge.output_limits = (0, 15)
 
         inverterHelper.writeRegValue(modbusClient, 1626, 'uint16' ,0)
         valType, regValue =  inverterHelper.writeRegValue(modbusClient, 1024, 'int16',0)

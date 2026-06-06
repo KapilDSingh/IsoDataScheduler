@@ -21,11 +21,11 @@ class GridCPShaving(object):
             #register_matplotlib_converters()
             
             if (Area == 'ps'):
-               minLoadHeight = 6000
+               minLoadHeight = 9000
                prominenceHgt = 1
 
             else:
-                minLoadHeight = 100000
+                minLoadHeight = 135000
                 prominenceHgt = 3
 
             if (isHrly == True):
@@ -289,8 +289,8 @@ class GridCPShaving(object):
 
             ExtendEndTimeStamp = connection.execute(sql_query).scalar()
 
-            if (ExtendEndTimeStamp != null):
-                startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(Area, false)
+            if (ExtendEndTimeStamp is not None):
+                startTimeStamp, endTimeStamp = isoHelper.getStartEndForecastTimestamp(Area, False)
                 sql_query = "update peakTable set Overtime = '" + endTimeStamp.strftime("%Y-%m-%dT%H:%M:%S") + \
                     "' where timestamp = '" + ExtendEndTimeStamp.strftime("%Y-%m-%dT%H:%M:%S") + "' and area = '" + Area + "'"
                 result = connection.execute(sql_query)
